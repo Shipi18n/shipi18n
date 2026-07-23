@@ -1,0 +1,52 @@
+{
+  "name": "@shipi18n/core",
+  "version": "2.0.0-alpha.0",
+  "description": "Open-source, bring-your-own-LLM i18n translation engine. Provider-agnostic (OpenAI, Anthropic, ...).",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./adapters": "./src/adapters/index.js"
+  },
+  "files": [
+    "src",
+    "LICENSE",
+    "NOTICE",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
+    "test:watch": "NODE_OPTIONS='--experimental-vm-modules' jest --watch"
+  },
+  "keywords": [
+    "i18n",
+    "translation",
+    "llm",
+    "openai",
+    "anthropic",
+    "localization",
+    "bring-your-own-key"
+  ],
+  "license": "Apache-2.0",
+  "author": "Shipi18n",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Shipi18n/shipi18n.git",
+    "directory": "packages/core"
+  },
+  "peerDependencies": {
+    "@anthropic-ai/sdk": "^0.114.0",
+    "openai": ">=4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@anthropic-ai/sdk": {
+      "optional": true
+    },
+    "openai": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
