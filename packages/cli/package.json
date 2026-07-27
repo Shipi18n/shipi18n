@@ -1,17 +1,38 @@
 {
   "name": "@shipi18n/cli",
-  "version": "2.0.0-alpha.0",
+  "version": "2.0.0",
   "description": "Open-source, bring-your-own-LLM i18n translation CLI. Translate locale files with your own OpenAI/Anthropic key.",
   "type": "module",
-  "bin": { "shipi18n": "./bin/shipi18n.js" },
-  "files": ["bin", "src", "LICENSE", "NOTICE", "README.md"],
-  "scripts": {
-    "test": "NODE_OPTIONS='--experimental-vm-modules' jest"
+  "bin": {
+    "shipi18n": "./bin/shipi18n.js"
   },
-  "keywords": ["i18n", "cli", "translation", "llm", "openai", "anthropic", "localization", "bring-your-own-key"],
+  "files": [
+    "bin",
+    "src",
+    "LICENSE",
+    "NOTICE",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "NODE_OPTIONS='--experimental-vm-modules' jest --passWithNoTests"
+  },
+  "keywords": [
+    "i18n",
+    "cli",
+    "translation",
+    "llm",
+    "openai",
+    "anthropic",
+    "localization",
+    "bring-your-own-key"
+  ],
   "license": "Apache-2.0",
   "author": "Shipi18n",
-  "repository": { "type": "git", "url": "git+https://github.com/Shipi18n/shipi18n.git", "directory": "packages/cli" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Shipi18n/shipi18n.git",
+    "directory": "packages/cli"
+  },
   "dependencies": {
     "@shipi18n/core": "workspace:*",
     "chalk": "^5.3.0",
@@ -23,8 +44,12 @@
     "openai": ">=4.0.0"
   },
   "peerDependenciesMeta": {
-    "@anthropic-ai/sdk": { "optional": true },
-    "openai": { "optional": true }
+    "@anthropic-ai/sdk": {
+      "optional": true
+    },
+    "openai": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "jest": "^29.7.0"

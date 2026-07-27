@@ -5,7 +5,17 @@
   "description": "Shipi18n — open-source, bring-your-own-LLM i18n tooling (monorepo)",
   "license": "Apache-2.0",
   "scripts": {
-    "test": "pnpm -r test"
+    "test": "turbo run test",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "changeset publish"
+  },
+  "devDependencies": {
+    "@anthropic-ai/sdk": "^0.30.0",
+    "@changesets/cli": "^2.27.0",
+    "turbo": "^2.0.0"
   },
   "packageManager": "pnpm@9.15.9"
 }

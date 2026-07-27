@@ -1,41 +1,44 @@
 {
-  "name": "@shipi18n/core",
+  "name": "vite-plugin-shipi18n",
   "version": "2.0.0",
-  "description": "Open-source, bring-your-own-LLM i18n translation engine. Provider-agnostic (OpenAI, Anthropic, ...).",
-  "type": "module",
+  "description": "Vite plugin for automatic i18n translation at build time — bring your own OpenAI/Anthropic key. No hosted API.",
   "main": "src/index.js",
-  "exports": {
-    ".": "./src/index.js",
-    "./adapters": "./src/adapters/index.js"
-  },
+  "type": "module",
   "files": [
-    "src",
+    "src/index.js",
+    "README.md",
     "LICENSE",
-    "NOTICE",
-    "README.md"
+    "NOTICE"
   ],
   "scripts": {
     "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
-    "test:watch": "NODE_OPTIONS='--experimental-vm-modules' jest --watch"
+    "test:watch": "NODE_OPTIONS='--experimental-vm-modules' jest --watch",
+    "test:coverage": "NODE_OPTIONS='--experimental-vm-modules' jest --coverage"
   },
   "keywords": [
+    "vite",
+    "vite-plugin",
     "i18n",
     "translation",
+    "localization",
     "llm",
     "openai",
     "anthropic",
-    "localization",
     "bring-your-own-key"
   ],
-  "license": "Apache-2.0",
   "author": "Shipi18n",
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Shipi18n/shipi18n.git",
-    "directory": "packages/core"
+    "directory": "packages/vite-plugin"
+  },
+  "dependencies": {
+    "@shipi18n/core": "workspace:*"
   },
   "peerDependencies": {
-    "@anthropic-ai/sdk": "^0.114.0",
+    "vite": "^4.0.0 || ^5.0.0",
+    "@anthropic-ai/sdk": ">=0.30.0",
     "openai": ">=4.0.0"
   },
   "peerDependenciesMeta": {

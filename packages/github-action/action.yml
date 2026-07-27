@@ -1,0 +1,85 @@
+name: 'Shipi18n Auto Translate'
+description: 'Automatically translate your i18n locale files with your own OpenAI/Anthropic key. Open-source, no hosted API.'
+author: 'Shipi18n'
+branding:
+  icon: 'globe'
+  color: 'blue'
+
+inputs:
+  provider:
+    description: 'LLM provider: anthropic (default) or openai'
+    required: false
+    default: 'anthropic'
+  api-key:
+    description: 'Your LLM API key. Optional — falls back to the ANTHROPIC_API_KEY / OPENAI_API_KEY env var. Store it as a repo secret.'
+    required: false
+    default: ''
+  model:
+    description: 'Override the provider default model (optional)'
+    required: false
+    default: ''
+  source-file:
+    description: 'Path to source locale file (e.g., locales/en.json). Use this OR source-dir.'
+    required: false
+    default: ''
+  source-dir:
+    description: 'Path to source locale directory (e.g., locales/en). All JSON files will be translated. Use this OR source-file.'
+    required: false
+    default: ''
+  target-languages:
+    description: 'Comma-separated list of target language codes (e.g., es,fr,de)'
+    required: true
+  output-dir:
+    description: 'Directory to output translated files (default: same as source file directory)'
+    required: false
+    default: ''
+  source-language:
+    description: 'Source language code (default: en)'
+    required: false
+    default: 'en'
+  create-pr:
+    description: 'Create a pull request instead of direct commit (true/false)'
+    required: false
+    default: 'false'
+  incremental:
+    description: 'Only translate changed keys (compares with previous git commit)'
+    required: false
+    default: 'true'
+  commit-message:
+    description: 'Custom commit message (default: "chore: update translations [skip ci]")'
+    required: false
+    default: 'chore: update translations [skip ci]'
+  branch-name:
+    description: 'Branch name for PR (only used if create-pr is true)'
+    required: false
+    default: 'shipi18n-translations'
+  github-token:
+    description: 'GitHub token for creating PRs (defaults to GITHUB_TOKEN)'
+    required: false
+    default: ''
+  skip-keys:
+    description: 'Comma-separated keys to skip from translation (exact paths, e.g., brandName,company.name)'
+    required: false
+    default: ''
+  skip-paths:
+    description: 'Comma-separated glob patterns to skip (e.g., states.*,config.*.secret)'
+    required: false
+    default: ''
+
+outputs:
+  files-changed:
+    description: 'Number of translation files updated'
+  files-list:
+    description: 'JSON array of files that were translated'
+  languages:
+    description: 'List of languages translated'
+  verification-errors:
+    description: 'Number of verification errors found (missing placeholders, missing keys)'
+  verification-warnings:
+    description: 'Number of verification warnings found (unusual length ratios)'
+  skipped-keys-count:
+    description: 'Number of keys skipped from translation'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
