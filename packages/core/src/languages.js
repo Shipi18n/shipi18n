@@ -2,7 +2,7 @@
  * Language code → human-readable name. Ported from the backend so prompts read
  * naturally ("Translate from English to Spanish") rather than using bare codes.
  */
-const LANGUAGE_NAMES = {
+export const LANGUAGE_NAMES = {
   en: 'English', es: 'Spanish', fr: 'French', de: 'German', it: 'Italian',
   pt: 'Portuguese', nl: 'Dutch', ru: 'Russian', zh: 'Chinese', 'zh-CN': 'Chinese (Simplified)',
   'zh-TW': 'Chinese (Traditional)', ja: 'Japanese', ko: 'Korean', ar: 'Arabic', hi: 'Hindi',
