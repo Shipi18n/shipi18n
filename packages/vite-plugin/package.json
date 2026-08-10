@@ -8,7 +8,8 @@
     "src/index.js",
     "README.md",
     "LICENSE",
-    "NOTICE"
+    "NOTICE",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
@@ -34,7 +35,7 @@
     "directory": "packages/vite-plugin"
   },
   "dependencies": {
-    "@shipi18n/core": "workspace:*"
+    "@shipi18n/core": "workspace:^"
   },
   "peerDependencies": {
     "vite": "^4.0.0 || ^5.0.0",

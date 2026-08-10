@@ -1,26 +1,31 @@
 /**
  * Live quality-parity eval for @shipi18n/core.
- * Reads the Anthropic key from the project .env (handles the ANTRHOPIC typo),
- * translates a representative en.json to es + fr, and reports structure +
- * placeholder fidelity.  Run: node eval.mjs
+ * Translates a representative en.json to es + fr with a real Anthropic key and
+ * reports structure + placeholder fidelity.
+ *
+ * Run: ANTHROPIC_API_KEY=sk-ant-... node eval.mjs
+ * (a `.env` in the repo root, or at $SHIPI18N_ENV_FILE, is read as a fallback)
  */
 import fs from 'node:fs'
 import { translateJSON, flatten, validatePlaceholders } from './src/index.js'
 
-// --- load key from the project .env (typo-tolerant) ---
-const envPath = '/Users/ogg/MICROSERVICES2/microservices/i18n-translator/.env'
-const env = Object.fromEntries(
-  fs
-    .readFileSync(envPath, 'utf8')
-    .split('\n')
-    .filter((l) => l.includes('='))
-    .map((l) => {
-      const i = l.indexOf('=')
-      return [l.slice(0, i).trim(), l.slice(i + 1).trim().replace(/^['"]|['"]$/g, '')]
-    })
-)
-const apiKey = env.ANTHROPIC_API_KEY || env.ANTRHOPIC_API_KEY
-if (!apiKey) throw new Error('No Anthropic key found in .env')
+// --- resolve the key: env var first, then an optional local .env ---
+const readEnvFile = (p) => {
+  if (!p || !fs.existsSync(p)) return {}
+  return Object.fromEntries(
+    fs
+      .readFileSync(p, 'utf8')
+      .split('\n')
+      .filter((l) => l.includes('='))
+      .map((l) => {
+        const i = l.indexOf('=')
+        return [l.slice(0, i).trim(), l.slice(i + 1).trim().replace(/^['"]|['"]$/g, '')]
+      })
+  )
+}
+const fileEnv = readEnvFile(process.env.SHIPI18N_ENV_FILE || new URL('../../../.env', import.meta.url).pathname)
+const apiKey = process.env.ANTHROPIC_API_KEY || fileEnv.ANTHROPIC_API_KEY
+if (!apiKey) throw new Error('No Anthropic key — set ANTHROPIC_API_KEY (or SHIPI18N_ENV_FILE)')
 
 // --- representative source locale: placeholders, plurals, nesting, HTML, printf ---
 const en = {
