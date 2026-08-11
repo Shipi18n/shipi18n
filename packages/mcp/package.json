@@ -1,20 +1,45 @@
 {
   "name": "@shipi18n/mcp",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "MCP server for i18n translation — bring your own LLM. Translate locale files from any MCP client (Claude Desktop, Cursor, ...).",
   "type": "module",
-  "bin": { "shipi18n-mcp": "./src/server.js" },
+  "bin": {
+    "shipi18n-mcp": "./src/server.js"
+  },
   "main": "src/server.js",
-  "files": ["src", "!src/__tests__", "LICENSE", "NOTICE", "README.md", "CHANGELOG.md"],
-  "publishConfig": { "access": "public" },
+  "files": [
+    "src",
+    "!src/__tests__",
+    "LICENSE",
+    "NOTICE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "test": "NODE_OPTIONS='--experimental-vm-modules' jest --passWithNoTests",
     "start": "node src/server.js"
   },
-  "keywords": ["mcp", "model-context-protocol", "i18n", "translation", "llm", "anthropic", "openai", "localization", "bring-your-own-key"],
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "i18n",
+    "translation",
+    "llm",
+    "anthropic",
+    "openai",
+    "localization",
+    "bring-your-own-key"
+  ],
   "license": "Apache-2.0",
   "author": "Shipi18n",
-  "repository": { "type": "git", "url": "git+https://github.com/Shipi18n/shipi18n.git", "directory": "packages/mcp" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Shipi18n/shipi18n.git",
+    "directory": "packages/mcp"
+  },
   "dependencies": {
     "@shipi18n/core": "workspace:^",
     "@modelcontextprotocol/sdk": "^1.30.0",
@@ -25,8 +50,14 @@
     "openai": ">=4.0.0"
   },
   "peerDependenciesMeta": {
-    "@anthropic-ai/sdk": { "optional": true },
-    "openai": { "optional": true }
+    "@anthropic-ai/sdk": {
+      "optional": true
+    },
+    "openai": {
+      "optional": true
+    }
   },
-  "devDependencies": { "jest": "^29.7.0" }
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
 }
