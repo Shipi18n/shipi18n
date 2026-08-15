@@ -1,5 +1,10 @@
 # Shipi18n
 
+[![CI](https://github.com/Shipi18n/shipi18n/actions/workflows/ci.yml/badge.svg)](https://github.com/Shipi18n/shipi18n/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@shipi18n/core?label=%40shipi18n%2Fcore)](https://www.npmjs.com/package/@shipi18n/core)
+[![MCP](https://img.shields.io/npm/v/@shipi18n/mcp?label=%40shipi18n%2Fmcp)](https://www.npmjs.com/package/@shipi18n/mcp)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+
 **Open-source, bring-your-own-LLM i18n translation tooling.** Translate your locale files with your
 own OpenAI or Anthropic key — no account, no hosted API, no per-word fees.
 
@@ -73,6 +78,11 @@ pnpm --filter @shipi18n/core test
 ```
 
 Changesets manage versioning: `pnpm changeset` to add one.
+
+## Contributing
+
+Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). `pnpm install && pnpm test`
+runs 105 tests against a mock adapter, so you need no API key to work on this.
 
 ## License
 
