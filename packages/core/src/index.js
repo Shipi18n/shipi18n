@@ -12,5 +12,6 @@
  */
 export { translateJSON, translateStrings, flatten, unflatten } from './translate.js'
 export { extractPlaceholders, validatePlaceholders } from './placeholders.js'
+export { checkTranslations } from './check.js'
 export { getLanguageName, LANGUAGE_NAMES } from './languages.js'
 export { anthropicAdapter, openaiAdapter, resolveAdapter } from './adapters/index.js'
