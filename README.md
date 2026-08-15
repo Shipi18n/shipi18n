@@ -67,6 +67,18 @@ const { result, stats } = await translateJSON({
 // result → { greeting: 'Hola {{name}}' }
 ```
 
+## Check your translations — no key needed
+
+The same engine validates translations from **any** source. Run it in CI on every push:
+
+```bash
+npx @shipi18n/cli check ./locales -s en
+```
+
+Missing keys, dropped placeholders, collapsed plurals, empty values and untranslated copy — reported
+as human output, JSON, SARIF (GitHub PR annotations) or JUnit. Works on plain JSON trees, Flutter
+`.arb` bundles and Apple `.xcstrings` catalogs. Deterministic and offline: no LLM, no API key.
+
 ## Development
 
 This is a pnpm + turbo monorepo.

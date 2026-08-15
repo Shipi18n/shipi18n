@@ -16,7 +16,10 @@ const PLACEHOLDER_PATTERNS = [
   /\{\{[^}]+\}\}/g, // {{name}}
   /\$t\([^)]*\)/g, // $t(key)
   /%\{[^}]+\}/g, // %{name}
-  /%\d+\$[sdfx]/g, // %1$s
+  /%\d+\$(?:@|l{1,2}[du]|[sdfx])/g, // %1$s %1$@ %2$lld  (positional, before bare forms)
+  /%l{1,2}[du]/g, // %lld %llu %ld %lu  (Apple/C long forms, before bare %d)
+  /%@/g, // %@  (Apple object specifier)
+  /%\.\d+f/g, // %.2f  (precision floats)
   /%[sdfx]/g, // %s %d
   /\{[a-zA-Z0-9_.]+\}/g, // {count} {name}  (after the {{ }} pass)
 ]

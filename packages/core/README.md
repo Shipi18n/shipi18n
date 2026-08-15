@@ -57,6 +57,29 @@ const myAdapter = {
 await translateJSON({ content, from: 'en', to: 'de', provider: myAdapter })
 ```
 
+## Checking translations
+
+`checkTranslations` is the QA half of the engine — deterministic, no model call:
+
+```js
+import { checkTranslations } from '@shipi18n/core'
+
+const { findings, stats } = checkTranslations({
+  source: { greeting: 'Hello {{name}}' },
+  target: { greeting: 'Hola amigo' },   // dropped {{name}}
+  targetLang: 'es',
+})
+// findings[0] → { type: 'placeholder-missing', severity: 'error', path: 'greeting', missing: ['{{name}}'], ... }
+// stats → { sourceKeys, targetKeys, missing, errors, warnings, coverage }
+```
+
+Finding types: `missing-key`, `orphan-key`, `placeholder-missing`, `placeholder-added`,
+`plural-forms` (vue-i18n pipe plurals), `empty-value`, `untranslated`, `type-mismatch`.
+
+Format adapters for mobile catalogs are exported too: `parseArbBundle` (Flutter ARB) and
+`parseXcstrings` (Apple String Catalogs) normalize those files into plain locale objects that
+`checkTranslations` understands — including `%@` / `%lld` specifiers and plural variations.
+
 ## API
 
 - `translateJSON({ content, from, to, provider, apiKey?, model?, existing? })` → `{ result, stats }`

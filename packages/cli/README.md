@@ -45,6 +45,48 @@ shipi18n translate en.json -p openai -t de --api-key $OPENAI_API_KEY
 shipi18n translate en.json -t es --incremental
 ```
 
+## Check — validate translations in CI (no LLM, no key)
+
+`shipi18n check` is a deterministic QA gate for translated locale files. It works on output from
+**any** translator — this CLI, another tool, an agent, or a human — and needs no API key, so it can
+run on every push.
+
+```bash
+npx @shipi18n/cli check ./locales --source en
+```
+
+It detects both common layouts (`locales/en.json` and `locales/en/<ns>.json`), plus Flutter ARB
+directories and Apple String Catalogs (`shipi18n check Localizable.xcstrings`).
+
+**What it catches:** missing and orphaned keys · dropped or invented placeholders (`{{name}}`,
+`{count}`, `%s`, `%1$s`, `%@`, `%lld`, `$t(...)`, `%{name}`, HTML tags) · collapsed vue-i18n pipe
+plurals · empty values · untranslated copy · stale `.xcstrings` states.
+
+| Flag | Default | Meaning |
+| --- | --- | --- |
+| `-s, --source <lang>` | `en` | Source language |
+| `-r, --reporter <name>` | `human` | `human` \| `json` \| `sarif` \| `junit` |
+| `-o, --output <file>` | stdout | Write the report to a file |
+| `--ignore-keys <globs>` | — | Silence keys: `'*.copyright,home:mcp.badge'` |
+| `--fail-on <level>` | `error` | `error` \| `warning` \| `none` |
+| `--min-coverage <pct>` | — | Fail any language below this coverage |
+
+Exit codes: `0` pass, `1` findings at the fail level, `2` usage error. Errors may fail CI; warnings
+never do by default — a warning that blocks PRs gets the tool uninstalled.
+
+### GitHub Actions with PR annotations
+
+```yaml
+- name: Check translations
+  run: npx @shipi18n/cli check ./locales -s en --reporter sarif --output i18n.sarif
+
+- name: Upload findings
+  if: always()
+  uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: i18n.sarif
+```
+
 ## Bring your own LLM
 
 Set `ANTHROPIC_API_KEY` (default provider) or use `-p openai` with `OPENAI_API_KEY`. Your keys, your
