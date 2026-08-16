@@ -7,9 +7,13 @@
  * metadata and identifies the language — it does no I/O.
  */
 
-const FILENAME_LANG = /_([a-zA-Z]{2,3}(?:[-_][a-zA-Z0-9]{2,8})*)\.arb$/
+// The language is the locale-shaped TAIL of the filename: a 2-3 letter
+// lowercase code plus up to two script/region segments (Hans, BR, 419).
+// Anchoring to locale shape matters: a greedy match turned `my_app_en.arb`
+// into language "app-en" (bug found in review).
+const FILENAME_LANG = /_([a-z]{2,3}(?:[_-](?:[A-Z][a-z]{3}|[A-Z]{2}|\d{3})){0,2})\.arb$/
 
-/** `app_en.arb` → 'en', `intl_pt_BR.arb` → 'pt-BR', anything else → null. */
+/** `app_en.arb` → 'en', `my_app_pt_BR.arb` → 'pt-BR', anything else → null. */
 export function arbLangFromFilename(filename) {
   const m = FILENAME_LANG.exec(filename)
   return m ? m[1].replace(/_/g, '-') : null

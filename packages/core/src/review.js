@@ -135,8 +135,13 @@ export async function reviewTranslations({
   const stats = { judged: pairs.length, cached: 0, flagged: 0, calls: 0, parseFailures: 0 }
   const majority = Math.ceil(passes / 2)
 
-  // Serve what we can from the cache; judge only the rest.
+  // Serve what we can from the cache; judge only the rest — and judge each
+  // UNIQUE (source, translation) pair once. Identical strings at different
+  // paths must get identical verdicts (cross-batch vote variance made them
+  // disagree on first runs; found in review), and there is no reason to pay
+  // for the same judgment twice.
   const toJudge = []
+  const byHash = new Map() // hash → [paths]
   for (const pair of pairs) {
     const hash = pairHash({ ...pair, from, to, model: judgeModel ?? 'default', glossary })
     const hit = cache?.[hash]
@@ -147,6 +152,11 @@ export async function reviewTranslations({
       }
       continue
     }
+    if (byHash.has(hash)) {
+      byHash.get(hash).push(pair.path)
+      continue
+    }
+    byHash.set(hash, [pair.path])
     toJudge.push({ ...pair, hash })
   }
 
@@ -155,6 +165,7 @@ export async function reviewTranslations({
     const ids = items.map((i) => i.id)
     const votes = Object.fromEntries(ids.map((id) => [id, []]))
 
+    let validPasses = 0
     for (let pass = 0; pass < passes; pass++) {
       const prompt = buildReviewPrompt({ items, from, to, glossary })
       let verdicts = null
@@ -170,6 +181,7 @@ export async function reviewTranslations({
         stats.parseFailures++ // an unparseable pass is not a flag
         continue
       }
+      validPasses++
       for (const id of ids) {
         const v = verdicts[id]
         if (v && v.verdict !== 'ok') votes[id].push(v)
@@ -188,18 +200,24 @@ export async function reviewTranslations({
           .sort((a, b) => (counts[b] || 0) - (counts[a] || 0) || CATEGORIES.indexOf(a) - CATEGORIES.indexOf(b))[0]
         const note = flags.find((f) => f.verdict === category)?.note || flags[0].note
         entry = { category, note }
-        stats.flagged++
-        findings.push({
-          path: pair.path,
-          category,
-          note,
-          votes: flags.length,
-          passes,
-          source: pair.source,
-          translation: pair.translation,
-        })
       }
-      if (cache) cache[pair.hash] = entry
+      if (entry.category) {
+        // Fan the verdict out to every path that shares this exact pair.
+        for (const path of byHash.get(pair.hash)) {
+          findings.push({
+            path,
+            category: entry.category,
+            note: entry.note,
+            votes: flags.length,
+            passes,
+            source: pair.source,
+            translation: pair.translation,
+          })
+        }
+      }
+      // NEVER cache a pair no valid pass actually judged: caching "ok" after a
+      // transient outage would permanently mask the string (bug found in review).
+      if (cache && validPasses > 0) cache[pair.hash] = entry
     }
   }
 

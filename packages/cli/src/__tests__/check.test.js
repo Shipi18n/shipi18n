@@ -90,6 +90,31 @@ describe('runCheck', () => {
   })
 })
 
+describe('whole-file failures and layout regressions (bug hunt 2026-08-16)', () => {
+  test('H1: a missing namespace file means ZERO coverage, not 98%', () => {
+    const many = Object.fromEntries(Array.from({ length: 50 }, (_, i) => [`k${i}`, `String number ${i}`]))
+    write('en/common.json', many)
+    mkdirSync(join(dir, 'es'), { recursive: true })
+    const r = runCheck({ input: dir, source: 'en' })
+    expect(r.languages[0].stats.coverage).toBe(0)
+  })
+
+  test('H1b: an unparseable file means ZERO coverage', () => {
+    write('en.json', { a: 'Aaa', b: 'Bbb', c: 'Ccc' })
+    write('es.json', '{ broken')
+    const r = runCheck({ input: dir, source: 'en' })
+    expect(r.languages[0].stats.coverage).toBe(0)
+  })
+
+  test('H4: dot-directories (like the .shipi18n cache) are never languages', () => {
+    write('en/a.json', { x: 'Hello there world' })
+    write('es/a.json', { x: 'Hola mundo amigo' })
+    mkdirSync(join(dir, '.shipi18n'), { recursive: true })
+    const r = runCheck({ input: dir, source: 'en' })
+    expect(r.languages.map((l) => l.lang)).toEqual(['es'])
+  })
+})
+
 describe('verdict', () => {
   const result = (errors, warnings, coverage = 1) => ({
     totals: { errors, warnings },

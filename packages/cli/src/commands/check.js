@@ -56,7 +56,7 @@ export function discoverLayout(inputPath, sourceLang) {
 
 function flatLayout(dir, sourceLang) {
   const langs = readdirSync(dir)
-    .filter((f) => f.endsWith('.json'))
+    .filter((f) => f.endsWith('.json') && !f.startsWith('.'))
     .map((f) => f.replace(/\.json$/, ''))
   if (!langs.includes(sourceLang)) throw new Error(`source file not found: ${join(dir, sourceLang + '.json')}`)
   const files = (lang) => ({ translation: join(dir, `${lang}.json`) })
@@ -71,7 +71,9 @@ function flatLayout(dir, sourceLang) {
 
 function nestedLayout(dir, sourceLang) {
   const langDirs = readdirSync(dir, { withFileTypes: true })
-    .filter((e) => e.isDirectory())
+    // Dot-directories are never locales — .shipi18n/ (our own cache) and .git/
+    // would otherwise show up as 100%-missing "languages".
+    .filter((e) => e.isDirectory() && !e.name.startsWith('.') && e.name !== 'node_modules')
     .map((e) => e.name)
   const nsFiles = (lang) =>
     Object.fromEntries(
@@ -103,7 +105,13 @@ export function compileIgnores(patterns) {
 
 /** Stats are recomputed AFTER ignores so a silenced finding vanishes entirely. */
 const statsFrom = (findings, sourceKeys, targetKeys) => {
-  const missing = findings.filter((f) => f.type === 'missing-key' || f.type === 'missing-file').length
+  // A missing or unparseable FILE means every source key is untranslated —
+  // one finding, but zero coverage. (Bug found in review: a 50-key namespace
+  // with its file missing reported 98% coverage.)
+  const wholeFileFailure = findings.some((f) => f.type === 'missing-file' || f.type === 'invalid-json')
+  const missing = wholeFileFailure
+    ? sourceKeys
+    : findings.filter((f) => f.type === 'missing-key').length
   return {
     sourceKeys,
     targetKeys,
@@ -190,9 +198,9 @@ function arbMode({ input, source, isIgnored, glossary }) {
   const languages = []
   for (const [lang, data] of Object.entries(byLang)) {
     if (lang === source) continue
-    const { findings, stats } = checkTranslations({ source: byLang[source], target: data, targetLang: lang, glossary })
-    const kept = findings.filter((f) => !isIgnored('arb', f.path))
     const ns = files[lang].replace(/\.arb$/, '')
+    const { findings, stats } = checkTranslations({ source: byLang[source], target: data, targetLang: lang, glossary })
+    const kept = findings.filter((f) => !isIgnored(ns, f.path))
     addPairs(perLang, lang, ns, byLang[source], data, isIgnored)
     languages.push(
       aggregateLanguage(lang, [

@@ -41,6 +41,12 @@ describe('ARB adapter (gate S5)', () => {
     expect(arbLangFromFilename('nolang.arb')).toBeNull()
   })
 
+  test('H3: multi-underscore app names do not swallow the language', () => {
+    expect(arbLangFromFilename('my_app_en.arb')).toBe('en')
+    expect(arbLangFromFilename('stocks_app_pt_BR.arb')).toBe('pt-BR')
+    expect(arbLangFromFilename('app_zh_Hans.arb')).toBe('zh-Hans')
+  })
+
   test('metadata keys are stripped and produce no findings', () => {
     expect(Object.keys(stripArbMetadata(en)).sort()).toEqual(['greeting', 'items'])
   })

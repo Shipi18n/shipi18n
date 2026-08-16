@@ -151,6 +151,38 @@ describe('incremental cache (gate M3)', () => {
   })
 })
 
+describe('review-pass regressions (bug hunt 2026-08-16)', () => {
+  test('H2: nothing is cached when zero passes parsed — outages must not mask strings', async () => {
+    const cache = {}
+    const garbage = { name: 'g', async complete() { return 'not json at all' } }
+    const { stats } = await reviewTranslations({
+      source: { a: 'Hello world here' }, target: { a: 'Hola mundo aquí' }, to: 'es',
+      provider: garbage, cache,
+    })
+    expect(Object.keys(cache)).toHaveLength(0)
+    expect(stats.parseFailures).toBeGreaterThan(0)
+  })
+
+  test('H6: identical pairs at different paths share one judgment and one verdict', async () => {
+    let calls = 0
+    const flagOnce = {
+      name: 'f',
+      async complete(prompt) {
+        calls++
+        const items = JSON.parse(prompt.slice(prompt.indexOf('Items:') + 6, prompt.lastIndexOf('Respond')))
+        return JSON.stringify(items.map((i) => ({ id: i.id, verdict: 'mistranslation', note: 'x' })))
+      },
+    }
+    const { findings } = await reviewTranslations({
+      source: { 'common:nav': 'Integrations', 'home:nav': 'Integrations', 'sec:nav': 'Integrations' },
+      target: { 'common:nav': '連携', 'home:nav': '連携', 'sec:nav': '連携' },
+      to: 'ja', provider: flagOnce, passes: 3,
+    })
+    expect(findings).toHaveLength(3) // fanned out to every path
+    expect(calls).toBe(3) // but judged once per pass, not once per path
+  })
+})
+
 describe('glossary is deterministic (gate M5)', () => {
   const glossary = { Shipi18n: { dnt: true }, dashboard: { es: 'panel' } }
 
