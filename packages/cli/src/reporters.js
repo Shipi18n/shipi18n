@@ -58,6 +58,8 @@ const RULE_META = {
   'missing-file': 'An expected locale file does not exist.',
   'stale-translation': 'The catalog marks this translation as needing review.',
   'glossary-violation': 'A do-not-translate or locked glossary term was not respected.',
+  'manual-translation-clobbered': 'A translation locked as hand-edited has been overwritten.',
+  'manual-translation-stale': 'The source changed after this translation was locked by hand.',
   'semantic-mistranslation': 'LLM judge (majority vote): the translation states something different from the source.',
   'semantic-omission': 'LLM judge (majority vote): meaningful source content is missing from the translation.',
   'semantic-addition': 'LLM judge (majority vote): the translation contains claims the source does not make.',

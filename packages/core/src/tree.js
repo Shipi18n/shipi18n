@@ -14,6 +14,7 @@ import { checkTranslations } from './check.js'
 import { parseArbBundle } from './formats/arb.js'
 import { parseXcstrings } from './formats/xcstrings.js'
 import { flatten } from './translate.js'
+import { lockId, lockFinding } from './locks.js'
 import { reviewTranslations } from './review.js'
 
 /** Separator for `ns<NUL>path` composite keys (paths may contain ':'). */
@@ -156,13 +157,28 @@ const addPairs = (perLang, lang, ns, sourceObj, targetObj, isIgnored) => {
     entry.target[`${ns}${SEP}${key}`] = tgtFlat[key]
   }
 }
+/** Compare a namespace against recorded manual-translation locks. */
+function lockFindings(locks, lang, ns, sourceObj, targetObj) {
+  const out = []
+  const src = flatten(sourceObj)
+  const tgt = flatten(targetObj)
+  for (const [path, value] of Object.entries(src)) {
+    const entry = locks.locked?.[lockId(lang, ns, path)]
+    if (!entry || typeof value !== 'string' || typeof tgt[path] !== 'string') continue
+    const hit = lockFinding(entry, value, tgt[path])
+    // Warnings only: locks protect human work, they must never fail a pipeline.
+    if (hit) out.push({ ...hit, severity: 'warning', path, source: value, translation: tgt[path] })
+  }
+  return out
+}
+
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'))
 const countLeaves = (obj) =>
   Object.values(obj).reduce((n, v) => n + (v && typeof v === 'object' ? countLeaves(v) : 1), 0)
 
 /* ------------------------------------------------------------------ modes */
 
-export function jsonMode({ input, source, isIgnored, glossary }) {
+export function jsonMode({ input, source, isIgnored, glossary, locks }) {
   const layout = discoverLayout(input, source)
 
   const sourceData = {}
@@ -191,6 +207,7 @@ export function jsonMode({ input, source, isIgnored, glossary }) {
         continue
       }
       const { findings, stats } = checkTranslations({ source: sourceData[ns], target: data, targetLang: lang, glossary })
+      if (locks) findings.push(...lockFindings(locks, lang, ns, sourceData[ns], data))
       const kept = findings.filter((f) => !isIgnored(ns, f.path))
       addPairs(perLang, lang, ns, sourceData[ns], data, isIgnored)
       namespaces.push({ ns, file: rel(file), findings: kept, stats: statsFrom(kept, stats.sourceKeys, stats.targetKeys) })
@@ -276,7 +293,7 @@ export function recomputeTotals(result) {
  * Route by what the input actually is: an .xcstrings catalog, a directory of
  * .arb files, or a plain JSON locale tree.
  */
-export function runCheck({ input, source = 'en', ignoreKeys, glossary } = {}) {
+export function runCheck({ input, source = 'en', ignoreKeys, glossary, locks } = {}) {
   const isIgnored = compileIgnores(ignoreKeys)
   const path = resolve(input)
   if (existsSync(path) && statSync(path).isFile() && path.endsWith('.xcstrings')) {
@@ -285,7 +302,7 @@ export function runCheck({ input, source = 'en', ignoreKeys, glossary } = {}) {
   if (existsSync(path) && statSync(path).isDirectory() && readdirSync(path).some((f) => f.endsWith('.arb'))) {
     return arbMode({ input, source, isIgnored, glossary })
   }
-  return jsonMode({ input, source, isIgnored, glossary })
+  return jsonMode({ input, source, isIgnored, glossary, locks })
 }
 
 /**

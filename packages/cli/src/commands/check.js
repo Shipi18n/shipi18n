@@ -24,6 +24,7 @@ import {
   SEP,
 } from '@shipi18n/core'
 import { REPORTERS } from '../reporters.js'
+import { locksFor, DEFAULT_LOCKS_PATH } from './lock.js'
 
 const pkg = JSON.parse(
   readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'package.json'), 'utf8')
@@ -74,6 +75,8 @@ export function checkCommand(program) {
     .option('--semantic-model <model>', 'Judge model override')
     .option('--semantic-passes <n>', 'Judge passes for the majority vote', (v) => parseInt(v, 10), 3)
     .option('--semantic-cache <file>', 'Verdict cache path', '.shipi18n/semantic-cache.json')
+    .option('--locks <file>', 'Manual-translation lock file', DEFAULT_LOCKS_PATH)
+    .option('--no-locks', 'Ignore manual-translation locks')
     .action(async (input = './locales', opts) => {
       let glossary
       if (opts.glossary) {
@@ -88,7 +91,13 @@ export function checkCommand(program) {
 
       let result
       try {
-        result = runCheck({ input, source: opts.source, ignoreKeys: opts.ignoreKeys, glossary })
+        result = runCheck({
+          input,
+          source: opts.source,
+          ignoreKeys: opts.ignoreKeys,
+          glossary,
+          locks: locksFor(opts),
+        })
       } catch (err) {
         console.error(chalk.red(`Error: ${err.message}`))
         process.exitCode = 2

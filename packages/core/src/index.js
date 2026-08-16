@@ -14,6 +14,7 @@ export { translateJSON, translateStrings, flatten, unflatten } from './translate
 export { extractPlaceholders, validatePlaceholders } from './placeholders.js'
 export { checkTranslations } from './check.js'
 export { runCheck, runSemantic, discoverLayout, compileIgnores, statsFrom, aggregateLanguage, SEP } from './tree.js'
+export { lockId, lockEntry, lockFinding, emptyLocks, normalizeLocks, LOCKS_VERSION } from './locks.js'
 export { parseArbBundle, arbLangFromFilename, arbLangFromContent, stripArbMetadata } from './formats/arb.js'
 export { parseXcstrings } from './formats/xcstrings.js'
 export { reviewTranslations, DEFAULT_JUDGE_MODELS, buildReviewPrompt, parseVerdicts, pairHash } from './review.js'
