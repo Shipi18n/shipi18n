@@ -6,7 +6,7 @@
  *   1. BYO-LLM  — an explicit `provider` arg, or an ANTHROPIC_API_KEY / OPENAI_API_KEY in the
  *                 server env → core's anthropic/openai adapter calls YOUR model directly.
  *   2. Sampling — no provider and no key → a "zero-config" adapter that asks the MCP *client*
- *                 (Claude Desktop, Cursor, …) to run the completion via `sampling/createMessage`.
+ *                 DEPRECATED fallback (SEP-2577); retained only for clients that still implement it. Orig: `sampling/createMessage`.
  *                 No API key needed; uses whatever model the client is running.
  */
 import { resolveAdapter } from '@shipi18n/core'
@@ -30,7 +30,10 @@ export function samplingAdapter(mcpServer) {
         })
       } catch (err) {
         throw new Error(
-          'This MCP client does not support sampling, and no LLM API key is set. ' +
+          'No LLM API key is set, and the deprecated MCP sampling fallback is unavailable in this client ' +
+            '(sampling was deprecated in MCP spec 2026-07-28 / SEP-2577 and is not supported by Claude Desktop). ' +
+            'Set ANTHROPIC_API_KEY or OPENAI_API_KEY to translate. Note that the validation tools — check_locales, ' +
+            'check_glossary, diff_locales, review_locales — need no key at all. ' +
             'Set ANTHROPIC_API_KEY or OPENAI_API_KEY in the server env, or pass a `provider`. ' +
             `(sampling error: ${err?.message || err})`
         )
@@ -61,7 +64,7 @@ export function resolveProvider({ mcpServer, provider, apiKey, model, env = proc
   // 1. Explicit provider wins.
   if (provider) {
     if (!PROVIDER_ENV[provider]) {
-      throw new Error(`Unknown provider '${provider}'. Use 'anthropic', 'openai', or omit it to use MCP sampling.`)
+      throw new Error(`Unknown provider '${provider}'. Use 'anthropic' or 'openai'.`)
     }
     const key = apiKey || env[PROVIDER_ENV[provider]]
     if (!key) {
@@ -78,6 +81,10 @@ export function resolveProvider({ mcpServer, provider, apiKey, model, env = proc
     return { adapter: resolveAdapter('openai', { apiKey: env[PROVIDER_ENV.openai], model }), mode: 'openai (env key)' }
   }
 
-  // 3. Fall back to MCP sampling (client's model, zero key).
-  return { adapter: samplingAdapter(mcpServer), mode: 'mcp-sampling (client model)' }
+  // 3. Last resort: MCP sampling. DEPRECATED — kept only so clients that still
+  // implement it keep working. Never advertise this path: sampling was
+  // deprecated in MCP spec 2026-07-28 (SEP-2577, "New implementations SHOULD
+  // NOT adopt it") and Claude Desktop does not support it. The supported way to
+  // translate is a provider key; the keyless tools are the validators.
+  return { adapter: samplingAdapter(mcpServer), mode: 'mcp-sampling (deprecated fallback)' }
 }

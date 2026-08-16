@@ -1,14 +1,21 @@
 #!/usr/bin/env node
 /**
- * @shipi18n/mcp — Model Context Protocol server for i18n translation.
+ * @shipi18n/mcp — Model Context Protocol server for i18n quality assurance.
  *
- * Exposes translate_json, translate_file, list_languages, and check_placeholders to any MCP client
- * (Claude Desktop, Cursor, …). Bring your own LLM: set ANTHROPIC_API_KEY or OPENAI_API_KEY, or run
- * with no key and it uses the client's own model via MCP sampling.
+ * VALIDATION (no API key, no model call — the reason this server exists):
+ *   check_locales      structural QA over a locale tree
+ *   check_glossary     do-not-translate and locked-term enforcement
+ *   diff_locales       what still needs translating
+ *   review_locales     hands YOU the pairs and criteria so your own reasoning
+ *                      judges meaning — the server never calls a model
+ *   check_placeholders compare two strings
+ *   list_languages     known language codes
  *
- * Usage (Claude Desktop config):
- *   { "mcpServers": { "shipi18n": { "command": "npx", "args": ["-y", "@shipi18n/mcp"],
- *     "env": { "ANTHROPIC_API_KEY": "sk-ant-..." } } } }
+ * TRANSLATION (needs your own provider key):
+ *   translate_json, translate_file — set ANTHROPIC_API_KEY or OPENAI_API_KEY.
+ *
+ * Usage (Claude Desktop config) — validation works with no env block at all:
+ *   { "mcpServers": { "shipi18n": { "command": "npx", "args": ["-y", "@shipi18n/mcp"] } } }
  */
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'

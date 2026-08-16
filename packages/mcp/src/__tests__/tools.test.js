@@ -29,7 +29,7 @@ describe('translate_json tool', () => {
     })
     expect(res.isError).toBeFalsy()
     const { translations, mode } = res.structuredContent
-    expect(mode).toBe('mcp-sampling (client model)')
+    expect(mode).toBe('mcp-sampling (deprecated fallback)')
     expect(translations.es.greeting).toBe('Hola {{name}}')
     expect(translations.es.cart.items).toContain('{{count}}')
     expect(translations.fr.greeting).toBe('Bonjour {{name}}')
@@ -138,6 +138,6 @@ describe('samplingAdapter', () => {
   })
   test('gives a helpful error when the client lacks sampling', async () => {
     await expect(samplingAdapter(makeNoSamplingServer()).complete('x'))
-      .rejects.toThrow(/does not support sampling/)
+      .rejects.toThrow(/deprecated MCP sampling fallback is unavailable/)
   })
 })

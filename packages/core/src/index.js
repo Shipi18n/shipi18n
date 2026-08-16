@@ -13,6 +13,7 @@
 export { translateJSON, translateStrings, flatten, unflatten } from './translate.js'
 export { extractPlaceholders, validatePlaceholders } from './placeholders.js'
 export { checkTranslations } from './check.js'
+export { runCheck, runSemantic, discoverLayout, compileIgnores, statsFrom, aggregateLanguage, SEP } from './tree.js'
 export { parseArbBundle, arbLangFromFilename, arbLangFromContent, stripArbMetadata } from './formats/arb.js'
 export { parseXcstrings } from './formats/xcstrings.js'
 export { reviewTranslations, DEFAULT_JUDGE_MODELS, buildReviewPrompt, parseVerdicts, pairHash } from './review.js'

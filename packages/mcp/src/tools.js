@@ -9,6 +9,7 @@ import { dirname, join, resolve } from 'node:path'
 import { z } from 'zod'
 import { translateJSON, translateStrings, validatePlaceholders, LANGUAGE_NAMES } from '@shipi18n/core'
 import { resolveProvider } from './provider.js'
+import { validatorTools } from './validators.js'
 
 const PROVIDER_ARG = z.enum(['anthropic', 'openai']).optional()
 
@@ -32,7 +33,7 @@ export function translateJsonTool(mcpServer, env) {
       title: 'Translate JSON',
       description:
         'Translate an i18n locale JSON object to one or more target languages, preserving structure and placeholders. ' +
-        'Uses your own LLM key (ANTHROPIC_API_KEY/OPENAI_API_KEY) or, if none is set, the MCP client\'s model via sampling.',
+        'Requires your own LLM key (ANTHROPIC_API_KEY/OPENAI_API_KEY). For key-free work use the validation tools. Legacy: the MCP client\'s model via sampling.',
       inputSchema: {
         content: z.string().describe('The source locale as a JSON string, e.g. {"greeting":"Hello {{name}}"}'),
         to: z.string().describe('Target language code(s), comma-separated, e.g. "es,fr,de"'),
@@ -171,9 +172,13 @@ export function checkPlaceholdersTool() {
 
 export function allTools(mcpServer, env = process.env) {
   return [
-    translateJsonTool(mcpServer, env),
-    translateFileTool(mcpServer, env),
+    // Keyless validators first — they are the headline capability and the only
+    // tools that work with no configuration whatsoever.
+    ...validatorTools(),
     listLanguagesTool(),
     checkPlaceholdersTool(),
+    // Translation requires a provider key.
+    translateJsonTool(mcpServer, env),
+    translateFileTool(mcpServer, env),
   ]
 }
