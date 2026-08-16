@@ -107,6 +107,13 @@ already failed the structural check are never sent to the judge.
 What it flags: `semantic-mistranslation` (says something different), `semantic-omission` (meaning
 dropped), `semantic-addition` (meaning invented).
 
+**Measured** (2026-08-16, committed 228-pair corpus, thresholds fixed before the judge was built,
+default judge `claude-haiku-4-5`, 3 passes): **100%** of planted errors caught (100% per category,
+100% label accuracy), **7.1%** false positives on clean pairs, 6/6 glossary violations with 0 false,
+~62k tokens in 141s. On a real 478-pair production tree it flagged 3.6% of keys; the warm-cache
+rerun made **zero** model calls. Full harness: `evals/semantic/` in the repo — run it against your
+own model.
+
 ### Glossary (deterministic — no LLM)
 
 ```json
