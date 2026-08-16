@@ -76,6 +76,11 @@ const { findings, stats } = checkTranslations({
 Finding types: `missing-key`, `orphan-key`, `placeholder-missing`, `placeholder-added`,
 `plural-forms` (vue-i18n pipe plurals), `empty-value`, `untranslated`, `type-mismatch`.
 
+`reviewTranslations({ source, target, from, to, provider, passes, glossary, cache })` is the
+semantic layer: an LLM-as-judge pass (BYO key) with majority voting across passes, strict output
+validation, and an incremental cache — unchanged pairs cost zero calls. Judge findings carry
+`{ path, category, note, votes, passes }`.
+
 Format adapters for mobile catalogs are exported too: `parseArbBundle` (Flutter ARB) and
 `parseXcstrings` (Apple String Catalogs) normalize those files into plain locale objects that
 `checkTranslations` understands — including `%@` / `%lld` specifiers and plural variations.

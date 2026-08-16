@@ -1,5 +1,16 @@
 # @shipi18n/core
 
+## 2.2.0
+
+- New: `reviewTranslations(...)` — LLM-as-judge semantic QA. Flags translations that are
+  structurally fine but semantically wrong (mistranslation / omission / addition). Majority vote
+  across N passes (default 3) controls judge noise; unparseable passes are discarded, never counted
+  as flags; locale content is embedded as inert JSON data, never as instructions. Includes an
+  incremental cache interface: unchanged pairs cost zero model calls.
+- New: deterministic glossary enforcement in `checkTranslations` — `glossary` option with
+  do-not-translate terms and locked per-language translations; violations are `glossary-violation`
+  errors and need no model call.
+
 ## 2.1.0
 
 - New: `checkTranslations({ source, target })` — deterministic structural QA for translated locale

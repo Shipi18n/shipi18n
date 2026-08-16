@@ -36,7 +36,47 @@ const looksTranslatable = (str) => /\s/.test(str.trim()) && /[a-zA-Z]/.test(str)
  * Types: missing-key, orphan-key, placeholder-missing, placeholder-added,
  *        plural-forms, empty-value, untranslated, type-mismatch
  */
-export function checkTranslations({ source, target, targetLang = 'target' }) {
+/**
+ * Deterministic glossary enforcement — no LLM, no key.
+ * dnt terms must survive verbatim (case-sensitive: brands are spelled one way);
+ * locked per-language terms must appear (case-insensitive) whenever the source
+ * uses the term.
+ */
+function glossaryFindings(s, t, glossary, targetLang, path) {
+  const findings = []
+  for (const [term, cfg] of Object.entries(glossary)) {
+    // Match the term as it actually appears in the source: "@shipi18n/mcp" is a
+    // package name, and a translation that preserves it verbatim (lowercase) is
+    // CORRECT even though the canonical brand casing differs. Found by the M7
+    // eval: three clean pairs were flagged for exactly this.
+    const occurrences = s.match(
+      new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi')
+    )
+    if (!occurrences) continue
+    if (cfg.dnt && ![...new Set(occurrences)].every((m) => t.includes(m))) {
+      findings.push({
+        type: 'glossary-violation',
+        severity: 'error',
+        path,
+        message: `do-not-translate term "${term}" is missing from the translation`,
+        source: s,
+        translation: t,
+      })
+    } else if (!cfg.dnt && typeof cfg[targetLang] === 'string' && !t.toLowerCase().includes(cfg[targetLang].toLowerCase())) {
+      findings.push({
+        type: 'glossary-violation',
+        severity: 'error',
+        path,
+        message: `locked term "${term}" must be translated as "${cfg[targetLang]}"`,
+        source: s,
+        translation: t,
+      })
+    }
+  }
+  return findings
+}
+
+export function checkTranslations({ source, target, targetLang = 'target', glossary }) {
   const findings = []
   const src = flatten(source)
   const tgt = flatten(target)
@@ -116,6 +156,8 @@ export function checkTranslations({ source, target, targetLang = 'target' }) {
         translation: t,
       })
     }
+
+    if (glossary) findings.push(...glossaryFindings(s, t, glossary, targetLang, path))
 
     // Warning only: "OK", brand names and short labels are often legitimately identical.
     if (s === t && looksTranslatable(s)) {

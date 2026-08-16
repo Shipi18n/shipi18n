@@ -1,6 +1,6 @@
 {
   "name": "@shipi18n/core",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Open-source, bring-your-own-LLM i18n translation engine. Provider-agnostic (OpenAI, Anthropic, ...).",
   "type": "module",
   "main": "src/index.js",

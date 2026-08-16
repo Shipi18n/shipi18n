@@ -1,5 +1,18 @@
 # @shipi18n/cli
 
+## 2.2.0
+
+- New: `shipi18n check --semantic` — BYO-key LLM-judge pass on top of the structural check.
+  - Advisory by default: semantic findings are warnings and never fail CI unless you opt in with
+    `--semantic-fail`.
+  - Structural-first: keys that already have structural errors are not sent to the judge.
+  - Incremental: verdicts are cached (`--semantic-cache`, default `.shipi18n/semantic-cache.json`);
+    unchanged strings cost zero model calls on re-runs.
+  - `--glossary <file>` enforces do-not-translate and locked terms deterministically (no LLM) and
+    feeds the glossary to the judge as context.
+  - New flags: `-p/--provider`, `--api-key`, `--semantic-model`, `--semantic-passes`.
+  - Semantic findings flow through all reporters; SARIF remains schema-valid.
+
 ## 2.1.0
 
 - New command: `shipi18n check [path]` — validate translated locale files against the source

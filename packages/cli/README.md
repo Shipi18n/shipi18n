@@ -87,6 +87,39 @@ never do by default — a warning that blocks PRs gets the tool uninstalled.
     sarif_file: i18n.sarif
 ```
 
+## Semantic QA — `--semantic` (the judge)
+
+The structural check cannot see a translation that is *fluent but wrong*. `--semantic` adds an
+LLM-as-judge pass with your own key:
+
+```bash
+npx @shipi18n/cli check ./locales -s en --semantic          # advisory: warnings only
+npx @shipi18n/cli check ./locales -s en --semantic --glossary glossary.json
+```
+
+**Honest limitations, up front:** the judge is probabilistic. Every key is judged across 3 passes
+and flagged only on a majority vote, unparseable passes are discarded, and semantic findings are
+**warnings by default** — they never fail CI unless you opt in with `--semantic-fail`. It augments
+review; it does not replace it. You pay your provider for the tokens; the verdict cache
+(`.shipi18n/semantic-cache.json`, safe to commit) makes unchanged re-runs free, and keys that
+already failed the structural check are never sent to the judge.
+
+What it flags: `semantic-mistranslation` (says something different), `semantic-omission` (meaning
+dropped), `semantic-addition` (meaning invented).
+
+### Glossary (deterministic — no LLM)
+
+```json
+{
+  "Shipi18n": { "dnt": true },
+  "dashboard": { "es": "panel", "de": "Dashboard", "ja": "ダッシュボード" }
+}
+```
+
+`"dnt"` terms must survive verbatim; language entries are required translations. Violations are
+`glossary-violation` **errors**, caught by string matching at zero cost, and the glossary is also
+given to the judge as context.
+
 ## Bring your own LLM
 
 Set `ANTHROPIC_API_KEY` (default provider) or use `-p openai` with `OPENAI_API_KEY`. Your keys, your

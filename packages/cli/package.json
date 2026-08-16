@@ -1,6 +1,6 @@
 {
   "name": "@shipi18n/cli",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Open-source, bring-your-own-LLM i18n translation CLI. Translate locale files with your own OpenAI/Anthropic key.",
   "type": "module",
   "bin": {

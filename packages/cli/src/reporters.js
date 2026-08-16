@@ -57,6 +57,10 @@ const RULE_META = {
   'invalid-json': 'A locale file could not be parsed as JSON.',
   'missing-file': 'An expected locale file does not exist.',
   'stale-translation': 'The catalog marks this translation as needing review.',
+  'glossary-violation': 'A do-not-translate or locked glossary term was not respected.',
+  'semantic-mistranslation': 'LLM judge (majority vote): the translation states something different from the source.',
+  'semantic-omission': 'LLM judge (majority vote): meaningful source content is missing from the translation.',
+  'semantic-addition': 'LLM judge (majority vote): the translation contains claims the source does not make.',
 }
 
 /** SARIF 2.1.0 — one run, one rule per finding type, one result per finding. */

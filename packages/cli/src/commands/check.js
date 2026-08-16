@@ -10,11 +10,11 @@
  * `locales/<lang>/<ns>.json`), Flutter ARB directories, and Apple String
  * Catalogs (`.xcstrings`). Reporters: human, json, sarif, junit.
  */
-import { readFileSync, readdirSync, existsSync, statSync, writeFileSync } from 'node:fs'
+import { readFileSync, readdirSync, existsSync, statSync, writeFileSync, mkdirSync } from 'node:fs'
 import { join, basename, resolve, relative, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import chalk from 'chalk'
-import { checkTranslations, parseArbBundle, parseXcstrings } from '@shipi18n/core'
+import { checkTranslations, parseArbBundle, parseXcstrings, reviewTranslations, flatten } from '@shipi18n/core'
 import { REPORTERS } from '../reporters.js'
 
 const pkg = JSON.parse(
@@ -115,18 +115,38 @@ const statsFrom = (findings, sourceKeys, targetKeys) => {
 }
 
 const rel = (p) => relative(process.cwd(), p).split('\\').join('/')
+
+/**
+ * Semantic pairs are collected during the structural pass so --semantic never
+ * re-reads files. Keys are `ns\u0000path` (NUL separator: paths may contain ':').
+ * The map is attached to the result NON-enumerably so JSON/SARIF reports don't
+ * ship every source string twice.
+ */
+const SEP = '\u0000'
+const addPairs = (perLang, lang, ns, sourceObj, targetObj, isIgnored) => {
+  const srcFlat = flatten(sourceObj)
+  const tgtFlat = flatten(targetObj)
+  const entry = (perLang[lang] ??= { source: {}, target: {} })
+  for (const [key, value] of Object.entries(srcFlat)) {
+    if (typeof value !== 'string' || typeof tgtFlat[key] !== 'string') continue
+    if (isIgnored(ns, key)) continue
+    entry.source[`${ns}${SEP}${key}`] = value
+    entry.target[`${ns}${SEP}${key}`] = tgtFlat[key]
+  }
+}
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'))
 const countLeaves = (obj) =>
   Object.values(obj).reduce((n, v) => n + (v && typeof v === 'object' ? countLeaves(v) : 1), 0)
 
 /* ------------------------------------------------------------------ modes */
 
-function jsonMode({ input, source, isIgnored }) {
+function jsonMode({ input, source, isIgnored, glossary }) {
   const layout = discoverLayout(input, source)
 
   const sourceData = {}
   for (const [ns, file] of Object.entries(layout.source)) sourceData[ns] = readJson(file) // broken source = usage error
 
+  const perLang = {}
   const languages = []
   for (const { lang, files } of layout.targets) {
     const namespaces = []
@@ -148,16 +168,17 @@ function jsonMode({ input, source, isIgnored }) {
         namespaces.push({ ns, file: rel(file), findings, stats: statsFrom(findings, srcKeys, 0) })
         continue
       }
-      const { findings, stats } = checkTranslations({ source: sourceData[ns], target: data, targetLang: lang })
+      const { findings, stats } = checkTranslations({ source: sourceData[ns], target: data, targetLang: lang, glossary })
       const kept = findings.filter((f) => !isIgnored(ns, f.path))
+      addPairs(perLang, lang, ns, sourceData[ns], data, isIgnored)
       namespaces.push({ ns, file: rel(file), findings: kept, stats: statsFrom(kept, stats.sourceKeys, stats.targetKeys) })
     }
     languages.push(aggregateLanguage(lang, namespaces))
   }
-  return finishResult({ layout: layout.layout, dir: layout.dir, source, languages })
+  return finishResult({ layout: layout.layout, dir: layout.dir, source, languages }, perLang)
 }
 
-function arbMode({ input, source, isIgnored }) {
+function arbMode({ input, source, isIgnored, glossary }) {
   const dir = resolve(input)
   const names = readdirSync(dir).filter((f) => f.endsWith('.arb'))
   const filesByName = Object.fromEntries(names.map((n) => [n, readJson(join(dir, n))]))
@@ -165,37 +186,41 @@ function arbMode({ input, source, isIgnored }) {
 
   if (!byLang[source]) throw new Error(`no ARB file for source language '${source}' in ${input}`)
 
+  const perLang = {}
   const languages = []
   for (const [lang, data] of Object.entries(byLang)) {
     if (lang === source) continue
-    const { findings, stats } = checkTranslations({ source: byLang[source], target: data, targetLang: lang })
+    const { findings, stats } = checkTranslations({ source: byLang[source], target: data, targetLang: lang, glossary })
     const kept = findings.filter((f) => !isIgnored('arb', f.path))
     const ns = files[lang].replace(/\.arb$/, '')
+    addPairs(perLang, lang, ns, byLang[source], data, isIgnored)
     languages.push(
       aggregateLanguage(lang, [
         { ns, file: rel(join(dir, files[lang])), findings: kept, stats: statsFrom(kept, stats.sourceKeys, stats.targetKeys) },
       ])
     )
   }
-  return finishResult({ layout: 'arb', dir, source, languages })
+  return finishResult({ layout: 'arb', dir, source, languages }, perLang)
 }
 
-function xcstringsMode({ input, source, isIgnored }) {
+function xcstringsMode({ input, source, isIgnored, glossary }) {
   const file = resolve(input)
   const parsed = parseXcstrings(readJson(file))
   const sourceLang = source !== 'en' ? source : parsed.sourceLang
   const ns = basename(file)
 
+  const perLang = {}
   const languages = []
   for (const [lang, data] of Object.entries(parsed.languages)) {
-    const { findings, stats } = checkTranslations({ source: parsed.source, target: data, targetLang: lang })
+    const { findings, stats } = checkTranslations({ source: parsed.source, target: data, targetLang: lang, glossary })
+    addPairs(perLang, lang, ns, parsed.source, data, isIgnored)
     const adapterFindings = parsed.findings.filter((f) => f.lang === lang).map(({ lang: _l, ...f }) => f)
     const kept = [...findings, ...adapterFindings].filter((f) => !isIgnored(ns, f.path))
     languages.push(
       aggregateLanguage(lang, [{ ns, file: rel(file), findings: kept, stats: statsFrom(kept, stats.sourceKeys, stats.targetKeys) }])
     )
   }
-  return finishResult({ layout: 'xcstrings', dir: dirname(file), source: sourceLang, languages })
+  return finishResult({ layout: 'xcstrings', dir: dirname(file), source: sourceLang, languages }, perLang)
 }
 
 function aggregateLanguage(lang, namespaces) {
@@ -211,29 +236,94 @@ function aggregateLanguage(lang, namespaces) {
   return { lang, namespaces, stats: { ...agg, coverage: agg.sourceKeys ? agg.covered / agg.sourceKeys : 1 } }
 }
 
-function finishResult(result) {
+function finishResult(result, perLang = {}) {
   result.languages.sort((a, b) => a.lang.localeCompare(b.lang))
+  recomputeTotals(result)
+  Object.defineProperty(result, 'semanticPairs', { enumerable: false, value: perLang })
+  return result
+}
+
+function recomputeTotals(result) {
   result.totals = result.languages.reduce(
     (a, l) => ({ errors: a.errors + l.stats.errors, warnings: a.warnings + l.stats.warnings }),
     { errors: 0, warnings: 0 }
   )
-  return result
 }
 
 /**
  * Route by what the input actually is: an .xcstrings catalog, a directory of
  * .arb files, or a plain JSON locale tree.
  */
-export function runCheck({ input, source = 'en', ignoreKeys } = {}) {
+export function runCheck({ input, source = 'en', ignoreKeys, glossary } = {}) {
   const isIgnored = compileIgnores(ignoreKeys)
   const path = resolve(input)
   if (existsSync(path) && statSync(path).isFile() && path.endsWith('.xcstrings')) {
-    return xcstringsMode({ input, source, isIgnored })
+    return xcstringsMode({ input, source, isIgnored, glossary })
   }
   if (existsSync(path) && statSync(path).isDirectory() && readdirSync(path).some((f) => f.endsWith('.arb'))) {
-    return arbMode({ input, source, isIgnored })
+    return arbMode({ input, source, isIgnored, glossary })
   }
-  return jsonMode({ input, source, isIgnored })
+  return jsonMode({ input, source, isIgnored, glossary })
+}
+
+/**
+ * Run the LLM-judge semantic pass over a structural result and merge findings.
+ *
+ * Structural-first: keys that already carry a structural ERROR are excluded —
+ * there is no reason to pay a judge to look at a string with a dropped
+ * placeholder. Semantic findings are WARNINGS unless `fail` is set; a noisy
+ * gate that blocks PRs gets uninstalled.
+ *
+ * @returns aggregated judge stats { judged, cached, flagged, calls, parseFailures }
+ */
+export async function runSemantic(result, { provider, apiKey, model, passes, glossary, cache, fail = false }) {
+  const totals = { judged: 0, cached: 0, flagged: 0, calls: 0, parseFailures: 0 }
+
+  for (const l of result.languages) {
+    const pairs = result.semanticPairs?.[l.lang]
+    if (!pairs) continue
+
+    const errorPaths = new Set(
+      l.namespaces.flatMap((n) =>
+        n.findings.filter((f) => f.severity === 'error').map((f) => `${n.ns}${SEP}${f.path}`)
+      )
+    )
+    const src = {}
+    const tgt = {}
+    for (const key of Object.keys(pairs.source)) {
+      if (errorPaths.has(key)) continue
+      src[key] = pairs.source[key]
+      tgt[key] = pairs.target[key]
+    }
+    if (!Object.keys(src).length) continue
+
+    const { findings, stats } = await reviewTranslations({
+      source: src, target: tgt, from: result.source, to: l.lang,
+      provider, apiKey, model, passes, glossary, cache,
+    })
+    for (const k of Object.keys(totals)) totals[k] += stats[k] ?? 0
+
+    for (const f of findings) {
+      const sepAt = f.path.indexOf(SEP)
+      const ns = f.path.slice(0, sepAt)
+      const path = f.path.slice(sepAt + 1)
+      const nsEntry = l.namespaces.find((n) => n.ns === ns)
+      if (!nsEntry) continue
+      nsEntry.findings.push({
+        type: `semantic-${f.category}`,
+        severity: fail ? 'error' : 'warning',
+        path,
+        message: f.note || f.category,
+        source: f.source,
+        translation: f.translation,
+      })
+    }
+    for (const n of l.namespaces) n.stats = statsFrom(n.findings, n.stats.sourceKeys, n.stats.targetKeys)
+    const re = aggregateLanguage(l.lang, l.namespaces)
+    l.stats = re.stats
+  }
+  recomputeTotals(result)
+  return totals
 }
 
 /* ---------------------------------------------------------------- verdict */
@@ -266,15 +356,70 @@ export function checkCommand(program) {
     .option('--ignore-keys <patterns>', "Comma-separated '*' globs of keys to silence (path or ns:path)")
     .option('--fail-on <level>', 'Exit non-zero on: error | warning | none', 'error')
     .option('--min-coverage <pct>', 'Fail any language below this coverage percentage', parseFloat)
-    .action((input = './locales', opts) => {
+    .option('--glossary <file>', 'Glossary JSON: DNT terms + locked per-language translations (deterministic)')
+    .option('--semantic', 'Add the LLM-as-judge pass (BYO key; advisory warnings by default)')
+    .option('--semantic-fail', 'Escalate semantic findings to errors (opt-in)')
+    .option('-p, --provider <name>', 'LLM provider for --semantic: anthropic | openai', 'anthropic')
+    .option('--api-key <key>', 'LLM API key for --semantic (else provider env var)')
+    .option('--semantic-model <model>', 'Judge model override')
+    .option('--semantic-passes <n>', 'Judge passes for the majority vote', (v) => parseInt(v, 10), 3)
+    .option('--semantic-cache <file>', 'Verdict cache path', '.shipi18n/semantic-cache.json')
+    .action(async (input = './locales', opts) => {
+      let glossary
+      if (opts.glossary) {
+        try {
+          glossary = JSON.parse(readFileSync(opts.glossary, 'utf8'))
+        } catch (err) {
+          console.error(chalk.red(`Error: cannot read glossary ${opts.glossary}: ${err.message}`))
+          process.exitCode = 2
+          return
+        }
+      }
+
       let result
       try {
-        result = runCheck({ input, source: opts.source, ignoreKeys: opts.ignoreKeys })
+        result = runCheck({ input, source: opts.source, ignoreKeys: opts.ignoreKeys, glossary })
       } catch (err) {
         console.error(chalk.red(`Error: ${err.message}`))
         process.exitCode = 2
         return
       }
+
+      if (opts.semantic) {
+        const cachePath = resolve(opts.semanticCache)
+        let cache = {}
+        if (existsSync(cachePath)) {
+          try {
+            cache = JSON.parse(readFileSync(cachePath, 'utf8'))
+          } catch {
+            cache = {} // a corrupt cache is just a cold cache
+          }
+        }
+        try {
+          const judge = await runSemantic(result, {
+            provider: opts.provider,
+            apiKey: opts.apiKey,
+            model: opts.semanticModel,
+            passes: opts.semanticPasses,
+            glossary,
+            cache,
+            fail: Boolean(opts.semanticFail),
+          })
+          mkdirSync(dirname(cachePath), { recursive: true })
+          writeFileSync(cachePath, JSON.stringify(cache, null, 2) + '\n')
+          console.error(
+            chalk.gray(
+              `semantic: judged ${judge.judged} (${judge.cached} cached), flagged ${judge.flagged}, ` +
+                `${judge.calls} model call(s), ${judge.parseFailures} discarded pass(es)`
+            )
+          )
+        } catch (err) {
+          console.error(chalk.red(`Semantic pass failed: ${err.message}`))
+          process.exitCode = 2
+          return
+        }
+      }
+
       const verdictResult = verdict(result, { failOn: opts.failOn, minCoverage: opts.minCoverage })
 
       const name = opts.json ? 'json' : opts.reporter
