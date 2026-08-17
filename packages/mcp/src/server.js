@@ -31,9 +31,14 @@ const pkg = JSON.parse(
 export function createServer(env = process.env) {
   const server = new McpServer({ name: 'shipi18n', version: pkg.version })
   // `server.server` is the low-level Server used for sampling (createMessage).
-  for (const tool of allTools(server.server, env)) {
+  const tools = allTools(server.server, env)
+  for (const tool of tools) {
     server.registerTool(tool.name, tool.config, tool.handler)
   }
+  // Record what was actually registered so the startup banner is derived from
+  // reality rather than a hand-maintained list. The hardcoded version silently
+  // omitted all four validators for a whole release.
+  server.registeredToolNames = tools.map((t) => t.name)
   return server
 }
 
@@ -42,7 +47,10 @@ async function main() {
   const transport = new StdioServerTransport()
   await server.connect(transport)
   // Log to stderr — stdout is the MCP transport and must stay clean.
-  console.error(`🌍 shipi18n-mcp v${pkg.version} ready (stdio). Tools: translate_json, translate_file, list_languages, check_placeholders`)
+  console.error(
+    `🌍 shipi18n-mcp v${pkg.version} ready (stdio). ` +
+      `Tools: ${server.registeredToolNames.join(', ')}`
+  )
 }
 
 /**

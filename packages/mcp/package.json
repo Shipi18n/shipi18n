@@ -1,7 +1,7 @@
 {
   "name": "@shipi18n/mcp",
-  "version": "2.0.1",
-  "description": "MCP server for i18n translation — bring your own LLM. Translate locale files from any MCP client (Claude Desktop, Cursor, ...).",
+  "version": "2.1.0",
+  "description": "MCP server for i18n quality assurance \u2014 check, diff and review locale files from any MCP client. Validation needs no API key.",
   "type": "module",
   "bin": {
     "shipi18n-mcp": "./src/server.js"
@@ -27,10 +27,10 @@
     "model-context-protocol",
     "i18n",
     "translation",
-    "llm",
-    "anthropic",
-    "openai",
+    "validation",
+    "linting",
     "localization",
+    "llm",
     "bring-your-own-key"
   ],
   "license": "Apache-2.0",

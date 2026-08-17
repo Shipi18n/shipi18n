@@ -22,7 +22,7 @@ LLM provider.
 | --- | --- |
 | [`@shipi18n/core`](packages/core) | The translation engine. Provider-agnostic adapters, structure-preserving JSON translation, placeholder validation, incremental mode. |
 | [`@shipi18n/cli`](packages/cli) | Command-line translator: `shipi18n translate <file> -t es,fr`. |
-| [`@shipi18n/mcp`](packages/mcp) | MCP server — translate from Claude Desktop, Cursor, or any MCP client. Works with **no API key at all** via MCP sampling. |
+| [`@shipi18n/mcp`](packages/mcp) | MCP server — check, diff and review locale files from Claude Desktop, Cursor, or any MCP client. Validation needs **no API key**. |
 | [`vite-plugin-shipi18n`](packages/vite-plugin) | Vite plugin that translates locale files at build time, with caching. |
 | [`shipi18n-github-action`](packages/github-action) | GitHub Action that keeps translations in sync on push/PR. |
 
@@ -39,10 +39,10 @@ the LLM you already pay for.
 - **Provider-agnostic.** Anthropic and OpenAI ship in the box; any object with a
   `complete(prompt)` method is a valid adapter.
 
-## Zero-key usage via MCP
+## Check from your editor — no API key
 
-`@shipi18n/mcp` can run without any API key: with MCP *sampling*, the translation is performed by the
-model already running in your MCP client.
+`@shipi18n/mcp` brings the checks to any MCP client. The validation tools call no model, so they need
+no key at all:
 
 ```jsonc
 // claude_desktop_config.json
@@ -52,6 +52,11 @@ model already running in your MCP client.
   }
 }
 ```
+
+> *"Check ./locales against English and tell me what's broken in Spanish."*
+
+`review_locales` goes further without needing a key either: it hands your agent the translation pairs
+and the review criteria, and your agent reasons about meaning with the model it already runs.
 
 ## Library usage
 
@@ -67,7 +72,7 @@ const { result, stats } = await translateJSON({
 // result → { greeting: 'Hola {{name}}' }
 ```
 
-## Check your translations — no key needed
+## Check in CI — no key needed
 
 The same engine validates translations from **any** source. Run it in CI on every push:
 
@@ -78,6 +83,19 @@ npx @shipi18n/cli check ./locales -s en
 Missing keys, dropped placeholders, collapsed plurals, empty values and untranslated copy — reported
 as human output, JSON, SARIF (GitHub PR annotations) or JUnit. Works on plain JSON trees, Flutter
 `.arb` bundles and Apple `.xcstrings` catalogs. Deterministic and offline: no LLM, no API key.
+
+### Protect hand-edited translations
+
+Fix a string by hand, lock it, and `check` warns you if anything ever overwrites it — or if the
+English moves underneath it:
+
+```bash
+npx @shipi18n/cli lock ./locales --keys 'legal.*'
+```
+
+`.shipi18n/locks.json` stores hashes only, is safe to commit, and these findings are **warnings** —
+protecting human work must never block a pipeline. Details in the
+[CLI README](packages/cli/README.md).
 
 ## Development
 

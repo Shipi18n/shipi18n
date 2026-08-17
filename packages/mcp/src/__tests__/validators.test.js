@@ -10,6 +10,8 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { checkLocalesTool, checkGlossaryTool, diffLocalesTool, reviewLocalesTool, validatorTools } from '../validators.js'
+import { createServer } from '../server.js'
+import { allTools } from '../tools.js'
 
 let dir
 let savedEnv
@@ -169,6 +171,32 @@ describe('registration (gate T2)', () => {
   test('no validator mentions sampling', () => {
     for (const t of validatorTools()) {
       expect(JSON.stringify(t.config).toLowerCase()).not.toContain('sampling')
+    }
+  })
+
+  /**
+   * The startup banner used to carry a hand-written tool list. It went a whole
+   * release omitting all four validators — the clean-machine smoke caught it,
+   * no unit test could. The banner is now derived from what was registered, and
+   * this pins that so a future tool cannot be added without appearing.
+   */
+  test('the server reports every registered tool, validators included', () => {
+    const names = createServer({}).registeredToolNames
+    for (const v of ['check_locales', 'check_glossary', 'diff_locales', 'review_locales']) {
+      expect(names).toContain(v)
+    }
+    expect(names).toContain('translate_json')
+    expect(new Set(names).size).toBe(names.length) // no duplicate registrations
+  })
+
+  test('no argument description offers sampling as a normal option', () => {
+    const server = createServer({})
+    expect(JSON.stringify(server.registeredToolNames)).not.toContain('sampling')
+    // The provider argument once read "Omit to auto-detect / use sampling",
+    // which advertised a deprecated path in text agents read.
+    for (const t of allTools(server.server, {})) {
+      const args = JSON.stringify(t.config.inputSchema ?? {}).toLowerCase()
+      expect(args).not.toContain('sampling')
     }
   })
 })

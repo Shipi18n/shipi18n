@@ -1,5 +1,14 @@
 # @shipi18n/cli
 
+## 2.3.0
+
+- New: `shipi18n lock [path]` — record hand-edited translations in a readable, commit-friendly
+  `.shipi18n/locks.json`. `--keys` globs, `--lang`, `--relock`.
+- New: `check` reports `manual-translation-clobbered` and `manual-translation-stale` (warnings only —
+  locks protect human work and must never fail a pipeline). `--no-locks` disables.
+- Fix: `--no-locks` did nothing. Commander pairs it with `--locks <file>`, so the negation arrives as
+  `locks: false`; the code only checked `noLocks`.
+
 ## 2.2.0
 
 - New: `shipi18n check --semantic` — BYO-key LLM-judge pass on top of the structural check.

@@ -127,6 +127,41 @@ own model.
 `glossary-violation` **errors**, caught by string matching at zero cost, and the glossary is also
 given to the judge as context.
 
+## Protect hand-edited translations — `shipi18n lock`
+
+The oldest complaint about machine translation: you fix a string by hand, the tool runs again, and
+your fix is gone. Lock the translations a human has blessed, and `check` tells you when that happens.
+
+```bash
+# bless everything currently in the tree
+npx @shipi18n/cli lock ./locales
+
+# or just the strings you actually hand-edited
+npx @shipi18n/cli lock ./locales --keys 'legal.*,checkout.cta'
+npx @shipi18n/cli lock ./locales --lang de,ja      # narrow to some languages
+```
+
+This writes `.shipi18n/locks.json` — **commit it**, it is the record of which translations a person
+reviewed. It stores only hashes, never your strings.
+
+Afterwards `check` reports two new findings:
+
+| Finding | Meaning |
+| --- | --- |
+| `manual-translation-clobbered` | the locked translation's text changed — someone re-translated over a human edit |
+| `manual-translation-stale` | the **source** changed underneath a locked translation, so the human edit may no longer be right |
+
+Both are **warnings, never errors**: this feature exists to protect people's work, not to block their
+pipeline. A lock that failed CI would just get deleted. Use `--fail-on warning` if you disagree, or
+`--no-locks` to ignore the lock file entirely.
+
+```bash
+# accept the current state as the new blessed baseline
+npx @shipi18n/cli lock ./locales --relock
+```
+
+A missing or corrupt lock file is a cold start, not a crash.
+
 ## Bring your own LLM
 
 Set `ANTHROPIC_API_KEY` (default provider) or use `-p openai` with `OPENAI_API_KEY`. Your keys, your

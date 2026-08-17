@@ -38,7 +38,7 @@ export function translateJsonTool(mcpServer, env) {
         content: z.string().describe('The source locale as a JSON string, e.g. {"greeting":"Hello {{name}}"}'),
         to: z.string().describe('Target language code(s), comma-separated, e.g. "es,fr,de"'),
         from: z.string().optional().describe('Source language code (default: en)'),
-        provider: PROVIDER_ARG.describe('Force a provider: anthropic or openai. Omit to auto-detect / use sampling.'),
+        provider: PROVIDER_ARG.describe('Force a provider: anthropic or openai. Omit to auto-detect from the environment.'),
         model: z.string().optional().describe('Override the provider default model'),
       },
     },

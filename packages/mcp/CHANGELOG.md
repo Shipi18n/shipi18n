@@ -1,5 +1,22 @@
 # @shipi18n/mcp
 
+## 2.1.0
+
+- New: four keyless validator tools — `check_locales`, `check_glossary`, `diff_locales` and
+  `review_locales`. They call no model and need no API key.
+- `review_locales` returns source/translation pairs plus review criteria so **your agent** judges
+  meaning with the model it already runs. The server performs no inference.
+- **Corrected claim.** Previous versions advertised zero-key translation via MCP sampling. Sampling
+  was deprecated in MCP spec 2026-07-28 (SEP-2577) and Claude Desktop never supported it, so that
+  claim was false for the most common client. Sampling remains only as a silent fallback for clients
+  that implement it; the documented way to translate is your own provider key. The genuinely
+  key-free capability is validation.
+- Tool registration now leads with the validators; translation tools follow.
+- Fix: the stdio startup banner carried a hand-written tool list and so never mentioned the
+  validators. It is now derived from what was actually registered, and a test pins it.
+- Fix: the `provider` argument description read "Omit to auto-detect / use sampling", advertising a
+  deprecated path in text agents read. Sampling is no longer named in any tool argument.
+
 ## 2.0.1
 
 **Fixes a bug that made 2.0.0 unusable from every MCP client — upgrade from 2.0.0.**

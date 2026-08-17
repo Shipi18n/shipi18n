@@ -1,5 +1,17 @@
 # @shipi18n/core
 
+## 2.3.0
+
+- New: manual-translation locks (`lockId`, `lockEntry`, `lockFinding`, `normalizeLocks`) — record
+  which translations a human has blessed so `check` can report `manual-translation-clobbered` when
+  one is overwritten and `manual-translation-stale` when its source moves underneath. Both are
+  warnings by design.
+- New: `runCheck` / `runSemantic` / `discoverLayout` now live in core (`src/tree.js`). They were in
+  the CLI; sharing them means the CLI and the MCP validator tools cannot drift apart.
+- Fix: locale files must be named like locales (BCP-47 shape). A `glossary.json` sitting beside your
+  locale files was being treated as a language, producing a 0%-coverage "glossary" locale — and the
+  docs tell you to put it exactly there.
+
 ## 2.2.0
 
 - New: `reviewTranslations(...)` — LLM-as-judge semantic QA. Flags translations that are

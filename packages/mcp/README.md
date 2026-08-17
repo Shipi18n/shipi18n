@@ -1,15 +1,10 @@
 # @shipi18n/mcp
 
-A [Model Context Protocol](https://modelcontextprotocol.io) server for **i18n translation** — translate
-your locale files straight from any MCP client (Claude Desktop, Cursor, …). **Bring your own LLM**, or
-use no key at all and let the client's own model do the work.
+A [Model Context Protocol](https://modelcontextprotocol.io) server for **i18n quality assurance** —
+check, diff and review your locale files straight from any MCP client (Claude Desktop, Cursor, …).
 
-## Two ways to run it
-
-- **BYO key** — set `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` in the server env; translation calls your model.
-- **Zero-key (sampling)** — set no key, and the server asks the MCP *client* to run the completion via
-  `sampling/createMessage`. No API key needed; uses whatever model your client runs. (Requires a client
-  that supports MCP sampling.)
+**The validation tools need no API key** and make no model call. Translation is also available, with
+your own provider key.
 
 ## Install
 
@@ -20,19 +15,51 @@ Add it to your MCP client config. For **Claude Desktop** (`claude_desktop_config
   "mcpServers": {
     "shipi18n": {
       "command": "npx",
-      "args": ["-y", "@shipi18n/mcp"],
-      "env": { "ANTHROPIC_API_KEY": "sk-ant-..." }
+      "args": ["-y", "@shipi18n/mcp"]
     }
   }
 }
 ```
 
-Omit the `env` block to use the zero-key sampling mode. For the OpenAI provider, set `OPENAI_API_KEY`
-instead. You'll also need the matching SDK available (`@anthropic-ai/sdk` or `openai`) when using BYO key.
+That is the whole setup for validation — no `env` block, no key. Then ask:
 
-Then just ask: *"Translate `locales/en.json` into French, German, and Japanese."*
+> *"Check `./locales` against English and tell me what's broken in Spanish."*
+
+To **translate** as well, add your provider key:
+
+```json
+"env": { "ANTHROPIC_API_KEY": "sk-ant-..." }
+```
+
+You will also need the matching SDK available (`@anthropic-ai/sdk` or `openai`) for translation.
+
+## How meaning-level review works without a key
+
+`review_locales` does not call a model. It runs the structural checks, then returns the surviving
+source/translation pairs plus the review criteria — and **your agent** judges them with the model it
+is already running. Nothing is sent to us, and nothing extra is billed.
+
+> **A note on MCP sampling.** Earlier versions of this README advertised a "zero-key" translation
+> mode built on `sampling/createMessage`. Sampling was **deprecated in MCP spec 2026-07-28**
+> ([SEP-2577](https://modelcontextprotocol.io/specification/draft/client/sampling): *"New
+> implementations SHOULD NOT adopt it"*) and **Claude Desktop never supported it**, so that claim was
+> wrong for the client most people use. The sampling path still exists as a silent fallback for
+> clients that do implement it, but it is not the documented way to translate — a provider key is.
 
 ## Tools
+
+**No API key required:**
+
+| Tool | Description |
+| --- | --- |
+| `check_locales` | Structural QA over a locale tree: missing/orphan keys, dropped placeholders, collapsed plurals, empty values, untranslated copy. |
+| `check_glossary` | Enforce do-not-translate terms and locked per-language translations. |
+| `diff_locales` | What still needs translating, per language. |
+| `review_locales` | Returns translation pairs + criteria so **your agent** judges meaning with its own model. |
+| `check_placeholders` | Compare two strings for placeholder drift. |
+| `list_languages` | Known language codes. |
+
+**Requires your own provider key:**
 
 | Tool | Description |
 | --- | --- |
