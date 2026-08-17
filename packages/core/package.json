@@ -1,7 +1,7 @@
 {
   "name": "@shipi18n/core",
   "version": "2.3.0",
-  "description": "Open-source, bring-your-own-LLM i18n translation engine. Provider-agnostic (OpenAI, Anthropic, ...).",
+  "description": "Translation QA for i18n locale files: placeholder and plural validation, key parity, coverage, and an LLM-as-judge semantic review. Also a structure-preserving translation engine \u2014 bring your own OpenAI or Anthropic key.",
   "type": "module",
   "main": "src/index.js",
   "exports": {
@@ -24,6 +24,10 @@
     "test:watch": "NODE_OPTIONS='--experimental-vm-modules' jest --watch"
   },
   "keywords": [
+    "validation",
+    "lint",
+    "translation-quality",
+    "i18n-qa",
     "i18n",
     "translation",
     "llm",

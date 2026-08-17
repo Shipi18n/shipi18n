@@ -1,11 +1,19 @@
 # @shipi18n/core
 
-Open-source, **bring-your-own-LLM** i18n translation engine. Translate locale JSON with your own
-OpenAI or Anthropic key — no Shipi18n account, no hosted API, no per-word fees. Provider-agnostic and
-extensible.
+**The engine behind Shipi18n's translation QA** — placeholder and plural validation, key parity,
+coverage and an LLM-as-judge semantic review — plus a structure-preserving translation engine. Open
+source, **bring your own LLM**, no account and no hosted API.
 
 ```bash
-npm i @shipi18n/core @anthropic-ai/sdk   # or: npm i @shipi18n/core openai
+npm i @shipi18n/core                     # checking needs nothing else
+npm i @shipi18n/core @anthropic-ai/sdk   # add a provider SDK to translate or judge
+```
+
+```js
+import { runCheck } from '@shipi18n/core'
+
+// deterministic, no model, no key
+const { languages, totals } = runCheck({ input: './locales', source: 'en' })
 ```
 
 ## Quickstart

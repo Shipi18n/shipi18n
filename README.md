@@ -5,39 +5,90 @@
 [![MCP](https://img.shields.io/npm/v/@shipi18n/mcp?label=%40shipi18n%2Fmcp)](https://www.npmjs.com/package/@shipi18n/mcp)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
-**Open-source, bring-your-own-LLM i18n translation tooling.** Translate your locale files with your
-own OpenAI or Anthropic key — no account, no hosted API, no per-word fees.
+**Catch broken translations before you ship them.** An open-source QA gate for your locale files —
+and, when you want it, an i18n translation engine that runs on your own LLM key.
+
+Your `es.json` says `Hola` where the English says `Hello {{name}}`. The placeholder is gone, the
+build is green, and the bug ships. Shipi18n finds that, and it finds the harder kind too: the string
+that has every placeholder and still says the wrong thing.
 
 ```bash
-export ANTHROPIC_API_KEY=sk-ant-...            # or OPENAI_API_KEY
-npx @shipi18n/cli translate locales/en.json -t es,fr,de
+npx @shipi18n/cli check ./locales -s en
 ```
 
-That's it. Your keys, your model, your files. Nothing leaves your machine except the call to your own
-LLM provider.
+No API key, no account, no config. Missing keys, dropped placeholders, collapsed plurals, empty
+values and untranslated copy — as human output, JSON, SARIF (GitHub PR annotations) or JUnit.
+
+Then, when you want the **meaning** checked, bring your own key. The judge needs a provider SDK
+alongside the CLI:
+
+```bash
+npm i -D @shipi18n/cli @anthropic-ai/sdk       # or `openai`
+export ANTHROPIC_API_KEY=sk-ant-...            # or OPENAI_API_KEY
+npx shipi18n check ./locales -s en --semantic
+```
+
+An LLM reads each pair and reports mistranslations, omissions and additions:
+
+```
+⚠ es  coverage 100.0%  0 error(s), 1 warning(s)
+    warning  delete  semantic-mistranslation — Translation says 'will save' (guardará)
+                     instead of 'will delete' (eliminará/borrará)
+```
+
+Every placeholder is intact and every key is present, so structural checks pass this file. Only
+reading it catches the bug. Advisory by default — it warns, it does not fail your build.
+
+> **Measured, not asserted.** On a 228-pair corpus committed *before* the judge was written
+> ([`60d699b`](https://github.com/Shipi18n/shipi18n/commit/60d699b)) and with thresholds fixed first:
+> **54/54 planted errors caught (100%)** and **12/168 false positives on clean pairs (7.1%)**, with
+> 6/6 glossary violations found. Reproduced on two independent runs (2026-08-16 and 2026-08-17) using
+> `claude-haiku-4-5`, 3 passes, ~59k tokens in 156s. Label accuracy moved between runs (100% →
+> 98.1%) — it is a model, so read these as a range, not a constant.
+> The harness is [`evals/semantic/`](evals/semantic). Run it against your own model.
+
+Nothing goes through our servers, because there are none. The only network call is from your machine
+to the provider you chose.
 
 ## Packages
 
 | Package | Description |
 | --- | --- |
-| [`@shipi18n/core`](packages/core) | The translation engine. Provider-agnostic adapters, structure-preserving JSON translation, placeholder validation, incremental mode. |
-| [`@shipi18n/cli`](packages/cli) | Command-line translator: `shipi18n translate <file> -t es,fr`. |
+| [`@shipi18n/core`](packages/core) | The engine: translation checks, the semantic judge, placeholder validation — plus provider-agnostic, structure-preserving translation with incremental mode. |
+| [`@shipi18n/cli`](packages/cli) | `shipi18n check ./locales` for CI, `--semantic` for meaning, `lock` to protect hand-edits, `translate` when you need it. |
 | [`@shipi18n/mcp`](packages/mcp) | MCP server — check, diff and review locale files from Claude Desktop, Cursor, or any MCP client. Validation needs **no API key**. |
 | [`vite-plugin-shipi18n`](packages/vite-plugin) | Vite plugin that translates locale files at build time, with caching. |
 | [`shipi18n-github-action`](packages/github-action) | GitHub Action that keeps translations in sync on push/PR. |
 
 ## Why
 
-Most i18n translation tools are SaaS: you pay per word, your strings go through someone else's
-servers, and you need yet another API key. Shipi18n is the opposite — a thin, well-tested layer over
-the LLM you already pay for.
+Generating translations is a solved problem. Half a dozen good tools will fill your locale files, and
+an agent will do it for free. **Nothing checks the result.** Your CI lints your JavaScript, typechecks
+your types and runs your tests — and then ships a `de.json` that nobody has read, produced by a model
+nobody audited.
 
-- **Placeholder-safe.** `{{name}}`, `{count}`, `%s`, `%d`, `%1$s`, `$t(...)`, `%{name}` and HTML tags
-  are preserved and validated after every translation.
-- **Structure-preserving.** Nested JSON in, identical shape out; non-string values pass through.
-- **Incremental.** Only new or changed keys are sent to the model.
-- **Provider-agnostic.** Anthropic and OpenAI ship in the box; any object with a
-  `complete(prompt)` method is a valid adapter.
+The checks that do exist are structural: they diff key sets and stop there. That catches the missing
+key. It does not catch the translation that has every key and every placeholder and still tells your
+German users the opposite of what you meant.
+
+Shipi18n is that missing gate, in two layers:
+
+- **Deterministic, offline, no key.** Missing and orphaned keys, dropped or malformed placeholders
+  (`{{name}}`, `{count}`, `%s`, `%d`, `%1$s`, `$t(...)`, `%{name}`, HTML), collapsed plural forms,
+  empty values, untranslated copy, coverage per language.
+- **Semantic, with your own key.** An LLM-as-judge pass over changed keys only, with multi-pass
+  majority voting because single-pass judge scores are unstable. Reports mistranslation, omission and
+  addition. Advisory by default — a QA tool that fails your build gets uninstalled.
+
+Plus the parts that make it usable day to day:
+
+- **Formats beyond JSON.** Flutter `.arb` and Apple `.xcstrings`, including `%@`/`%lld` specifiers.
+- **CI-native.** Correct exit codes, `--fail-on`, `--min-coverage`, SARIF for PR annotations, JUnit.
+- **Hand-edits are protected.** `shipi18n lock` records the translations a human blessed and warns
+  when anything overwrites them, or when the source moves underneath them.
+- **Keyless from your editor.** The MCP server's validators call no model at all.
+- **It also translates.** Provider-agnostic, structure-preserving, incremental — Anthropic and OpenAI
+  in the box, and any object with a `complete(prompt)` method is a valid adapter.
 
 ## Check from your editor — no API key
 
@@ -58,23 +109,10 @@ no key at all:
 `review_locales` goes further without needing a key either: it hands your agent the translation pairs
 and the review criteria, and your agent reasons about meaning with the model it already runs.
 
-## Library usage
-
-```js
-import { translateJSON } from '@shipi18n/core'
-
-const { result, stats } = await translateJSON({
-  content: { greeting: 'Hello {{name}}' },
-  from: 'en',
-  to: 'es',
-  provider: 'anthropic',        // 'anthropic' | 'openai' | custom { complete } adapter
-})
-// result → { greeting: 'Hola {{name}}' }
-```
-
 ## Check in CI — no key needed
 
-The same engine validates translations from **any** source. Run it in CI on every push:
+The checks work on translations from **any** source — a TMS, another tool, an agent, a human. Run it
+on every push:
 
 ```bash
 npx @shipi18n/cli check ./locales -s en
@@ -96,6 +134,38 @@ npx @shipi18n/cli lock ./locales --keys 'legal.*'
 `.shipi18n/locks.json` stores hashes only, is safe to commit, and these findings are **warnings** —
 protecting human work must never block a pipeline. Details in the
 [CLI README](packages/cli/README.md).
+
+## It also translates
+
+Checking works on translations from anywhere, but if you want Shipi18n to produce them too, it does —
+with your key, your model, and nothing in between.
+
+```bash
+npm i -D @shipi18n/cli @anthropic-ai/sdk       # or `openai`
+export ANTHROPIC_API_KEY=sk-ant-...            # or OPENAI_API_KEY
+npx shipi18n translate locales/en.json -t es,fr,de
+```
+
+```
+✔ es → locales/es.json (2 translated, 0 reused)
+```
+
+Or from Node (same SDK requirement):
+
+```js
+import { translateJSON } from '@shipi18n/core'
+
+const { result, stats } = await translateJSON({
+  content: { greeting: 'Hello {{name}}' },
+  from: 'en',
+  to: 'es',
+  provider: 'anthropic',        // 'anthropic' | 'openai' | custom { complete } adapter
+})
+// result → { greeting: 'Hola {{name}}' }
+```
+
+Structure-preserving, placeholder-safe and incremental — only new or changed keys are sent to the
+model. Then check the result with the same tool.
 
 ## Development
 

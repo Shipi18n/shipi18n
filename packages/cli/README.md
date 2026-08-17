@@ -1,15 +1,42 @@
 # @shipi18n/cli
 
-Open-source, **bring-your-own-LLM** i18n translation CLI. Translate your locale files with your own
-OpenAI or Anthropic key — no Shipi18n account, no hosted API.
+**Catch broken translations before you ship them** — and translate with your own LLM key when you
+want to. Open-source, no account, no hosted API.
+
+## Quickstart — check, no API key
+
+```bash
+npx @shipi18n/cli check ./locales -s en
+```
+
+Reports missing and orphaned keys, dropped placeholders, collapsed plurals, empty values,
+untranslated copy and per-language coverage. Deterministic and offline — no LLM, no key, nothing
+leaves your machine. Exit code `1` when there are errors, so it works as a CI gate as-is.
+
+Then, for the errors structure cannot see, bring a key. The judge needs a provider SDK next to the
+CLI, so install both:
+
+```bash
+npm i -D @shipi18n/cli @anthropic-ai/sdk   # or `openai`
+export ANTHROPIC_API_KEY=sk-ant-...
+npx shipi18n check ./locales -s en --semantic
+```
+
+An LLM reads each source/translation pair and reports mistranslations, omissions and additions —
+advisory by default, so it never fails your build unless you ask it to.
+
+> **Note.** `--semantic` only judges keys that pass the structural checks, so if a tree is full of
+> missing keys and dropped placeholders you will see `judged 0` and no model calls. That is by
+> design — fix the structural errors first, then re-run for meaning.
+
+**Measured** on a 228-pair corpus committed before the judge was written: **100% of planted errors
+caught, 7.1% false positives.** Full harness in the repo under `evals/semantic/` — run it against
+your own model.
+
+## Translating
 
 ```bash
 npm i -g @shipi18n/cli @anthropic-ai/sdk   # or add `openai` for the OpenAI provider
-```
-
-## Quickstart
-
-```bash
 export ANTHROPIC_API_KEY=sk-ant-...
 shipi18n translate en.json --target es,fr,de
 ```
@@ -107,12 +134,22 @@ already failed the structural check are never sent to the judge.
 What it flags: `semantic-mistranslation` (says something different), `semantic-omission` (meaning
 dropped), `semantic-addition` (meaning invented).
 
-**Measured** (2026-08-16, committed 228-pair corpus, thresholds fixed before the judge was built,
-default judge `claude-haiku-4-5`, 3 passes): **100%** of planted errors caught (100% per category,
-100% label accuracy), **7.1%** false positives on clean pairs, 6/6 glossary violations with 0 false,
-~62k tokens in 141s. On a real 478-pair production tree it flagged 3.6% of keys; the warm-cache
-rerun made **zero** model calls. Full harness: `evals/semantic/` in the repo — run it against your
-own model.
+**Measured** (committed 228-pair corpus, thresholds fixed before the judge was built, default judge
+`claude-haiku-4-5`, 3 passes). Two independent runs, 2026-08-16 and 2026-08-17:
+
+| | 2026-08-16 | 2026-08-17 |
+| --- | --- | --- |
+| planted errors caught | 54/54 (100%) | 54/54 (100%) |
+| per-category recall | 100% | 100% |
+| label accuracy | 100% | 53/54 (98.1%) |
+| false positives on clean pairs | 12/168 (7.1%) | 12/168 (7.1%) |
+| glossary violations | 6/6, 0 false | 6/6, 0 false |
+| cost | ~62k tokens / 141s | ~59k tokens / 156s, 48 calls |
+
+The judge is a model, so treat these as a range, not a constant — label accuracy moved between runs
+while catch and false-positive rates held. On a real 478-pair production tree it flagged 3.6% of keys;
+the warm-cache rerun made **zero** model calls. Full harness: `evals/semantic/` in the repo — run it
+against your own model and publish what you get.
 
 ### Glossary (deterministic — no LLM)
 
