@@ -1,0 +1,129 @@
+# Publish to npm via trusted publishing (OIDC) — no tokens.
+#
+# Why this exists: npm is retiring long-lived publish tokens. 2FA-bypass granular
+# tokens lost account/package/org management in early August 2026, and lose the
+# ability to publish directly around January 2027. Trusted publishing exchanges a
+# short-lived GitHub OIDC identity for a publish credential, so there is no secret
+# to leak, rotate or expire. Provenance attestations come for free.
+#
+# ── ONE-TIME HUMAN SETUP (per package, on npmjs.com) ─────────────────────────
+# Package → Settings → Trusted Publisher:
+#   Organization or user: Shipi18n
+#   Repository:           shipi18n
+#   Workflow filename:    publish.yml      ← filename only, NOT the full path
+#   Environment:          (leave blank)
+#   Allowed action:       npm publish
+# Do this for @shipi18n/core, @shipi18n/cli, @shipi18n/mcp and
+# vite-plugin-shipi18n. All four point at this same file.
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Two notes that cost us real debugging, kept here so they are not rediscovered:
+#
+#  1. `npm pack` does NOT rewrite `workspace:^` — tarballs it produces are
+#     uninstallable (EUNSUPPORTEDPROTOCOL). `pnpm pack` rewrites it to a real
+#     semver range. So we pack with pnpm and publish the tarball with npm, which
+#     is also the reference implementation for OIDC. This sidesteps pnpm's own
+#     OIDC support, which regressed between pnpm 10 and 11.
+#
+#  2. Order matters. cli and mcp depend on core, so core publishes first and the
+#     job waits for the registry to serve it before continuing.
+
+name: publish
+
+on:
+  push:
+    tags: ['v*']          # e.g. v2.3.0
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Pack and verify, but do not publish'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write         # the OIDC permission — without this, no trusted publishing
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest   # self-hosted runners are not supported by trusted publishing
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4   # respects "packageManager" in package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22           # trusted publishing needs >= 22.14.0
+          registry-url: 'https://registry.npmjs.org'
+          cache: pnpm
+
+      # Trusted publishing needs npm >= 11.5.1; Node 22 ships an older npm.
+      - name: Upgrade npm and assert it is new enough
+        run: |
+          set -euo pipefail
+          npm install -g npm@latest
+          echo "node $(node -v) / npm $(npm -v) / pnpm $(pnpm -v)"
+          NPM_V="$(npm -v)" node -e '
+            const [maj, min, pat] = process.env.NPM_V.split(".").map(Number)
+            const ok = maj > 11 || (maj === 11 && (min > 5 || (min === 5 && pat >= 1)))
+            if (!ok) {
+              console.error(`npm ${process.env.NPM_V} is too old for trusted publishing (need >= 11.5.1)`)
+              process.exit(1)
+            }'
+
+      - run: pnpm install --frozen-lockfile
+
+      # Never publish something the suite has not passed.
+      - run: pnpm -r test
+
+      - name: Publish in dependency order
+        env:
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/tars
+
+          publish_one() {
+            local dir="$1"
+            local name version tgz
+            name=$(node -p "require('./packages/$dir/package.json').name")
+            version=$(node -p "require('./packages/$dir/package.json').version")
+
+            if npm view "$name@$version" version >/dev/null 2>&1; then
+              echo "→ $name@$version already on the registry, skipping"
+              return 0
+            fi
+
+            echo "→ packing $name@$version"
+            ( cd "packages/$dir" && pnpm pack --pack-destination /tmp/tars >/dev/null )
+            tgz=$(ls -t /tmp/tars/*.tgz | head -1)
+
+            # pnpm rewrites workspace: on pack; prove it rather than trust it.
+            if tar xzOf "$tgz" package/package.json | grep -q 'workspace:'; then
+              echo "✗ $tgz still contains a workspace: range — refusing to publish"
+              exit 1
+            fi
+
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "  dry run: would publish $tgz"
+              return 0
+            fi
+
+            npm publish "$tgz" --access public   # provenance is automatic under OIDC
+            echo "  published $name@$version"
+
+            # cli and mcp resolve core from the registry, so wait for it to appear.
+            for i in $(seq 1 30); do
+              npm view "$name@$version" version >/dev/null 2>&1 && return 0
+              sleep 4
+            done
+            echo "✗ $name@$version did not become visible on the registry"
+            exit 1
+          }
+
+          # core first — cli and mcp both depend on it.
+          publish_one core
+          publish_one cli
+          publish_one mcp
+          publish_one vite-plugin
