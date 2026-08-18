@@ -12,6 +12,10 @@ Your `es.json` says `Hola` where the English says `Hello {{name}}`. The placehol
 build is green, and the bug ships. Shipi18n finds that, and it finds the harder kind too: the string
 that has every placeholder and still says the wrong thing.
 
+![shipi18n check finding a dropped placeholder, then an LLM catching a translation that says "will save" where the English says "delete"](docs/check-demo.gif)
+
+*A real run, not a mockup — [`docs/check-demo.tape`](docs/check-demo.tape) reproduces it.*
+
 ```bash
 npx @shipi18n/cli check ./locales -s en
 ```
