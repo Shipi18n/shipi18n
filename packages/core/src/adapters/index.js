@@ -11,6 +11,26 @@
  */
 
 /**
+ * The SDKs are optional peer deps, so a missing one is the single most common
+ * first-run failure. Naming `npm i <sdk>` alone is a trap for the npx path:
+ * `npx @shipi18n/cli` runs the CLI out of npm's throwaway cache, which resolves
+ * imports against itself and never sees the project's node_modules. The only
+ * fix that works there is installing both, then running the local binary.
+ * @param {string} provider
+ * @param {string} sdk
+ * @returns {Error}
+ */
+function missingSdkError(provider, sdk) {
+  return new Error(
+    `The '${provider}' provider requires the '${sdk}' package.\n` +
+      `  Install it next to the CLI:  npm i -D @shipi18n/cli ${sdk}\n` +
+      `  then run:                    npx shipi18n <command>\n` +
+      `  If you ran 'npx @shipi18n/cli', installing ${sdk} on its own will not help — ` +
+      `that copy of the CLI cannot see your project's node_modules.`
+  )
+}
+
+/**
  * Anthropic Claude adapter. Requires the optional peer dep `@anthropic-ai/sdk`.
  * Key resolved from opts.apiKey or the ANTHROPIC_API_KEY env var (SDK default).
  * @param {{ apiKey?: string, model?: string }} [config]
@@ -24,9 +44,7 @@ export function anthropicAdapter(config = {}) {
       clientPromise = import('@anthropic-ai/sdk')
         .then(({ default: Anthropic }) => new Anthropic(config.apiKey ? { apiKey: config.apiKey } : {}))
         .catch(() => {
-          throw new Error(
-            "The 'anthropic' provider requires the '@anthropic-ai/sdk' package. Install it with: npm i @anthropic-ai/sdk"
-          )
+          throw missingSdkError('anthropic', '@anthropic-ai/sdk')
         })
     }
     return clientPromise
@@ -63,9 +81,7 @@ export function openaiAdapter(config = {}) {
       clientPromise = import('openai')
         .then(({ default: OpenAI }) => new OpenAI(config.apiKey ? { apiKey: config.apiKey } : {}))
         .catch(() => {
-          throw new Error(
-            "The 'openai' provider requires the 'openai' package. Install it with: npm i openai"
-          )
+          throw missingSdkError('openai', 'openai')
         })
     }
     return clientPromise

@@ -313,11 +313,15 @@ export function runCheck({ input, source = 'en', ignoreKeys, glossary, locks } =
  * placeholder. Semantic findings are WARNINGS unless `fail` is set; a noisy
  * gate that blocks PRs gets uninstalled.
  *
- * @returns aggregated judge stats { judged, cached, flagged, calls, parseFailures }
+ * `excluded` counts the pairs skipped for that reason. It exists so callers can
+ * tell "nothing was wrong" apart from "everything was too wrong to judge" — a
+ * fully-broken tree otherwise reports `judged 0` and reads like a dead feature.
+ *
+ * @returns aggregated judge stats { judged, cached, flagged, calls, parseFailures, excluded }
  */
 
 export async function runSemantic(result, { provider, apiKey, model, passes, glossary, cache, fail = false }) {
-  const totals = { judged: 0, cached: 0, flagged: 0, calls: 0, parseFailures: 0 }
+  const totals = { judged: 0, cached: 0, flagged: 0, calls: 0, parseFailures: 0, excluded: 0 }
 
   for (const l of result.languages) {
     const pairs = result.semanticPairs?.[l.lang]
@@ -331,7 +335,10 @@ export async function runSemantic(result, { provider, apiKey, model, passes, glo
     const src = {}
     const tgt = {}
     for (const key of Object.keys(pairs.source)) {
-      if (errorPaths.has(key)) continue
+      if (errorPaths.has(key)) {
+        totals.excluded++
+        continue
+      }
       src[key] = pairs.source[key]
       tgt[key] = pairs.target[key]
     }
@@ -341,7 +348,7 @@ export async function runSemantic(result, { provider, apiKey, model, passes, glo
       source: src, target: tgt, from: result.source, to: l.lang,
       provider, apiKey, model, passes, glossary, cache,
     })
-    for (const k of Object.keys(totals)) totals[k] += stats[k] ?? 0
+    for (const k of Object.keys(stats)) totals[k] = (totals[k] ?? 0) + (stats[k] ?? 0)
 
     for (const f of findings) {
       const sepAt = f.path.indexOf(SEP)

@@ -132,6 +132,16 @@ export function checkCommand(program) {
                 `${judge.calls} model call(s), ${judge.parseFailures} discarded pass(es)`
             )
           )
+          // "judged 0" on a badly broken tree is correct but reads as a broken
+          // feature: the judge skips keys that already carry a structural error.
+          if (judge.judged === 0 && judge.excluded > 0) {
+            console.error(
+              chalk.yellow(
+                `note: nothing was judged — all ${judge.excluded} translated key(s) have structural ` +
+                  `errors, which the semantic pass skips. Fix those first, then re-run with --semantic.`
+              )
+            )
+          }
         } catch (err) {
           console.error(chalk.red(`Semantic pass failed: ${err.message}`))
           process.exitCode = 2

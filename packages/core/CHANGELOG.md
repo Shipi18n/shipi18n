@@ -1,5 +1,17 @@
 # @shipi18n/core
 
+## 2.4.0
+
+- Fix: `runSemantic` now returns `excluded` — the number of pairs it skipped because the key already
+  carried a structural error. Without it a fully-broken tree reported `judged 0` and was
+  indistinguishable from a clean one, which reads as a dead feature rather than correct behaviour.
+- Fix: the missing-SDK error names a fix that actually works. `npm i @anthropic-ai/sdk` does nothing
+  for the `npx @shipi18n/cli` path — that copy of the CLI resolves imports against npm's cache, not
+  your project — so the message now says to install the SDK next to the CLI and run `npx shipi18n`.
+- Note: the npm description on this page was stale until this release. npm only refreshes it on
+  publish, so the registry still described a translation engine after the project had repositioned
+  around translation QA.
+
 ## 2.3.0
 
 - New: manual-translation locks (`lockId`, `lockEntry`, `lockFinding`, `normalizeLocks`) — record

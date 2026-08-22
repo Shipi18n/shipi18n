@@ -1,5 +1,14 @@
 # @shipi18n/cli
 
+## 2.4.0
+
+- Fix: `check --semantic` explains a `judged 0`. When every translated key has a structural error
+  there is nothing for the judge to look at — correct, but it looked broken. The CLI now says how
+  many keys it skipped and to fix those first.
+- Fix (via core 2.4.0): the missing-SDK error names the install that works for the `npx` path.
+- Note: the npm description on this page was stale until this release — npm only refreshes it on
+  publish, so the registry still led with translation after the project repositioned around QA.
+
 ## 2.3.0
 
 - New: `shipi18n lock [path]` — record hand-edited translations in a readable, commit-friendly

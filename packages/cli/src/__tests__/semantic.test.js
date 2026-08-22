@@ -70,6 +70,30 @@ describe('structural-first (gate M4)', () => {
     expect(judgedSources).toContain('The trial lasts 30 days')
     expect(judgedSources).not.toContain('Hello {{name}} friend') // excluded: has placeholder-missing error
   })
+
+  test('a fully-broken tree reports what it skipped instead of a bare judged 0', async () => {
+    // Every translated key carries a structural error, so the judge has nothing
+    // left to look at. Without `excluded` this is indistinguishable from "clean".
+    write('en.json', { a: 'Hello {{name}}', b: 'You have {{count}} items' })
+    write('es.json', { a: 'Hola', b: 'Tienes elementos' })
+    const result = runCheck({ input: dir, source: 'en' })
+    const adapter = flagAll()
+    const stats = await runSemantic(result, { provider: adapter, passes: 3 })
+
+    expect(stats.judged).toBe(0)
+    expect(stats.excluded).toBe(2)
+    expect(adapter.calls).toBe(0)
+  })
+
+  test('excluded stays 0 when nothing is structurally broken', async () => {
+    write('en.json', { good: 'The trial lasts 30 days' })
+    write('es.json', { good: 'La prueba dura 3 días' })
+    const result = runCheck({ input: dir, source: 'en' })
+    const stats = await runSemantic(result, { provider: flagAll(), passes: 3 })
+
+    expect(stats.excluded).toBe(0)
+    expect(stats.judged).toBe(1)
+  })
 })
 
 describe('advisory default (gate M6)', () => {
