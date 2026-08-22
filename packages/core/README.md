@@ -36,6 +36,19 @@ console.log(stats)   // { translated, reused, placeholderWarnings }
 The API key is resolved from `apiKey` or, if omitted, the provider's env var
 (`ANTHROPIC_API_KEY` / `OPENAI_API_KEY`). Your key is used to call **your** LLM directly.
 
+The `openai` provider also takes a `baseURL`, which points it at **any OpenAI-compatible
+endpoint** — Ollama (`http://localhost:11434/v1`, no key needed, fully offline), Gemini's
+compatibility endpoint, Groq, Mistral, LM Studio, vLLM, or a corporate gateway:
+
+```js
+await translateJSON({
+  content, from: 'en', to: 'es',
+  provider: 'openai',
+  baseURL: 'http://localhost:11434/v1',  // Ollama — no apiKey required
+  model: 'llama3.2',
+})
+```
+
 ## What it does
 
 - **Structure-preserving** — flattens/unflattens nested JSON; non-string leaves pass through untouched.
@@ -95,7 +108,7 @@ Format adapters for mobile catalogs are exported too: `parseArbBundle` (Flutter 
 
 ## API
 
-- `translateJSON({ content, from, to, provider, apiKey?, model?, existing? })` → `{ result, stats }`
+- `translateJSON({ content, from, to, provider, apiKey?, model?, baseURL?, existing? })` → `{ result, stats }`
 - `translateStrings(texts, { adapter, from, to, batchSize? })` → `string[]`
 - `flatten(obj)` / `unflatten(flat)`
 - `extractPlaceholders(str)` / `validatePlaceholders(source, translation)`

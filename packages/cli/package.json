@@ -1,6 +1,6 @@
 {
   "name": "@shipi18n/cli",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "Catch broken translations before you ship: dropped placeholders, missing keys, collapsed plurals and \u2014 with your own LLM key \u2014 mistranslations the structure checks cannot see. CI-ready (SARIF, JUnit, exit codes). Translates too.",
   "type": "module",
   "bin": {

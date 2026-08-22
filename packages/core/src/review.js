@@ -118,10 +118,11 @@ export async function reviewTranslations({
   passes = 3,
   glossary,
   cache,
+  baseURL,
 }) {
   const judgeModel =
     model ?? (typeof provider === 'string' ? DEFAULT_JUDGE_MODELS[provider] : undefined)
-  const adapter = resolveAdapter(provider, { apiKey, model: judgeModel })
+  const adapter = resolveAdapter(provider, { apiKey, model: judgeModel, baseURL })
 
   const src = flatten(source)
   const tgt = flatten(target)

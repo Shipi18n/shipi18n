@@ -1,5 +1,13 @@
 # @shipi18n/cli
 
+## 2.5.0
+
+- New: `--base-url <url>` on `translate` and `check` — run against any OpenAI-compatible endpoint
+  with `-p openai`: Ollama (`http://localhost:11434/v1`, no API key at all), Gemini's compatibility
+  endpoint, Groq, LM Studio, vLLM. Makes the API key optional; the judge's published accuracy was
+  measured on `claude-haiku-4-5`, so run `evals/semantic/run.mjs` before trusting a different judge.
+- Guard: `--base-url` without `-p openai` is an explicit error rather than a silent provider switch.
+
 ## 2.4.0
 
 - Fix: `check --semantic` explains a `judged 0`. When every translated key has a structural error

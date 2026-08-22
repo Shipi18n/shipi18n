@@ -70,7 +70,13 @@ export function anthropicAdapter(config = {}) {
 /**
  * OpenAI adapter. Requires the optional peer dep `openai`.
  * Key resolved from opts.apiKey or the OPENAI_API_KEY env var (SDK default).
- * @param {{ apiKey?: string, model?: string }} [config]
+ *
+ * `baseURL` points the same adapter at any OpenAI-compatible endpoint —
+ * Ollama (http://localhost:11434/v1), Gemini's compatibility endpoint, Groq,
+ * Mistral, LM Studio, vLLM, a corporate gateway. Servers like Ollama accept
+ * any key, but the SDK refuses to construct without one, so when a baseURL is
+ * given and no key is, we pass a placeholder instead of failing the run.
+ * @param {{ apiKey?: string, model?: string, baseURL?: string }} [config]
  * @returns {LLMAdapter}
  */
 export function openaiAdapter(config = {}) {
@@ -79,7 +85,17 @@ export function openaiAdapter(config = {}) {
   const getClient = async () => {
     if (!clientPromise) {
       clientPromise = import('openai')
-        .then(({ default: OpenAI }) => new OpenAI(config.apiKey ? { apiKey: config.apiKey } : {}))
+        .then(
+          ({ default: OpenAI }) =>
+            new OpenAI({
+              ...(config.apiKey
+                ? { apiKey: config.apiKey }
+                : config.baseURL
+                  ? { apiKey: 'not-needed' } // local/keyless endpoints; real ones will 401
+                  : {}), // no baseURL: keep SDK default (OPENAI_API_KEY env)
+              ...(config.baseURL ? { baseURL: config.baseURL } : {}),
+            })
+        )
         .catch(() => {
           throw missingSdkError('openai', 'openai')
         })
@@ -106,7 +122,7 @@ export function openaiAdapter(config = {}) {
 /**
  * Resolve a provider name (+ config) to an adapter instance.
  * @param {'anthropic'|'openai'|LLMAdapter} provider
- * @param {{ apiKey?: string, model?: string }} [config]
+ * @param {{ apiKey?: string, model?: string, baseURL?: string }} [config]
  * @returns {LLMAdapter}
  */
 export function resolveAdapter(provider, config = {}) {

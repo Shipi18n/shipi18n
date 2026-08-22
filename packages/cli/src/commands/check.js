@@ -73,6 +73,10 @@ export function checkCommand(program) {
     .option('-p, --provider <name>', 'LLM provider for --semantic: anthropic | openai', 'anthropic')
     .option('--api-key <key>', 'LLM API key for --semantic (else provider env var)')
     .option('--semantic-model <model>', 'Judge model override')
+    .option(
+      '--base-url <url>',
+      'OpenAI-compatible endpoint for the judge (Ollama, Gemini compat, ...). Needs -p openai; makes the key optional'
+    )
     .option('--semantic-passes <n>', 'Judge passes for the majority vote', (v) => parseInt(v, 10), 3)
     .option('--semantic-cache <file>', 'Verdict cache path', '.shipi18n/semantic-cache.json')
     .option('--locks <file>', 'Manual-translation lock file', DEFAULT_LOCKS_PATH)
@@ -115,10 +119,16 @@ export function checkCommand(program) {
           }
         }
         try {
+          if (opts.baseUrl && opts.provider !== 'openai') {
+            console.error(chalk.red("--base-url targets OpenAI-compatible endpoints. Add -p openai."))
+            process.exitCode = 2
+            return
+          }
           const judge = await runSemantic(result, {
             provider: opts.provider,
             apiKey: opts.apiKey,
             model: opts.semanticModel,
+            baseURL: opts.baseUrl,
             passes: opts.semanticPasses,
             glossary,
             cache,

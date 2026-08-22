@@ -116,11 +116,12 @@ export async function translateStrings(texts, { adapter, from, to, batchSize = 4
  * @param {'anthropic'|'openai'|object} params.provider  provider name or a custom adapter
  * @param {string} [params.apiKey]               LLM API key (else provider env var)
  * @param {string} [params.model]                override the provider's default model
+ * @param {string} [params.baseURL]              OpenAI-compatible endpoint override (Ollama, Gemini compat, ...)
  * @param {Record<string,any>} [params.existing] prior translation → only re-translate changed/new keys (incremental)
  * @returns {Promise<{ result: object, stats: { translated: number, reused: number, placeholderWarnings: Array }}>}
  */
-export async function translateJSON({ content, from, to, provider, apiKey, model, existing }) {
-  const adapter = resolveAdapter(provider, { apiKey, model })
+export async function translateJSON({ content, from, to, provider, apiKey, model, baseURL, existing }) {
+  const adapter = resolveAdapter(provider, { apiKey, model, baseURL })
   const sourceFlat = flatten(content)
   const existingFlat = existing ? flatten(existing) : {}
 

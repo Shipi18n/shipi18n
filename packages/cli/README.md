@@ -56,6 +56,7 @@ Options:
   -p, --provider <name>    LLM provider: anthropic (default) or openai
       --api-key <key>      LLM API key (else ANTHROPIC_API_KEY / OPENAI_API_KEY env)
       --model <model>      Override the provider's default model
+      --base-url <url>     OpenAI-compatible endpoint (Ollama, Gemini compat, ...); needs -p openai
   -i, --incremental        Reuse existing output files; only translate new/missing keys
 ```
 
@@ -70,6 +71,13 @@ shipi18n translate en.json -p openai -t de --api-key $OPENAI_API_KEY
 
 # Incremental — only translate keys not already in the target file
 shipi18n translate en.json -t es --incremental
+
+# Ollama — fully local, no API key at all (any OpenAI-compatible server works)
+shipi18n translate en.json -p openai --base-url http://localhost:11434/v1 --model llama3.2 -t es
+
+# Google Gemini, via its OpenAI-compatible endpoint
+shipi18n translate en.json -p openai --base-url https://generativelanguage.googleapis.com/v1beta/openai/ \
+  --model gemini-2.5-flash --api-key $GEMINI_API_KEY -t es
 ```
 
 ## Check — validate translations in CI (no LLM, no key)
@@ -203,6 +211,13 @@ A missing or corrupt lock file is a cold start, not a crash.
 
 Set `ANTHROPIC_API_KEY` (default provider) or use `-p openai` with `OPENAI_API_KEY`. Your keys, your
 models — nothing is sent to a Shipi18n server. Built on [`@shipi18n/core`](https://www.npmjs.com/package/@shipi18n/core).
+
+`--base-url` points the OpenAI provider at **any OpenAI-compatible endpoint**: Ollama
+(`http://localhost:11434/v1` — no key needed, fully offline), Gemini's compatibility endpoint, Groq,
+Mistral, LM Studio, vLLM, or a corporate gateway. It works for `translate` and for the
+`check --semantic` judge alike — pass `--model` for the model that server actually hosts. The judge's
+published accuracy numbers were measured on `claude-haiku-4-5`; before trusting a different judge
+model, run the eval harness in the repo (`evals/semantic/run.mjs`) against it.
 
 ## License
 

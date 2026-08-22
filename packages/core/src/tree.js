@@ -320,7 +320,7 @@ export function runCheck({ input, source = 'en', ignoreKeys, glossary, locks } =
  * @returns aggregated judge stats { judged, cached, flagged, calls, parseFailures, excluded }
  */
 
-export async function runSemantic(result, { provider, apiKey, model, passes, glossary, cache, fail = false }) {
+export async function runSemantic(result, { provider, apiKey, model, baseURL, passes, glossary, cache, fail = false }) {
   const totals = { judged: 0, cached: 0, flagged: 0, calls: 0, parseFailures: 0, excluded: 0 }
 
   for (const l of result.languages) {
@@ -346,7 +346,7 @@ export async function runSemantic(result, { provider, apiKey, model, passes, glo
 
     const { findings, stats } = await reviewTranslations({
       source: src, target: tgt, from: result.source, to: l.lang,
-      provider, apiKey, model, passes, glossary, cache,
+      provider, apiKey, model, baseURL, passes, glossary, cache,
     })
     for (const k of Object.keys(stats)) totals[k] = (totals[k] ?? 0) + (stats[k] ?? 0)
 

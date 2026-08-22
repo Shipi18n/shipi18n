@@ -1,5 +1,13 @@
 # @shipi18n/core
 
+## 2.5.0
+
+- New: the `openai` adapter accepts `baseURL`, pointing it at any OpenAI-compatible endpoint —
+  Ollama (no key needed, fully offline), Gemini's compatibility endpoint, Groq, Mistral, LM Studio,
+  vLLM, corporate gateways. `translateJSON`, `reviewTranslations` and `runSemantic` all take and
+  thread it through. When a `baseURL` is set and no key is given, a placeholder key is sent instead
+  of failing, since servers like Ollama accept anything.
+
 ## 2.4.0
 
 - Fix: `runSemantic` now returns `excluded` — the number of pairs it skipped because the key already
