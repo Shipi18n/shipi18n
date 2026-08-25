@@ -25,7 +25,10 @@
     "llm",
     "openai",
     "anthropic",
-    "bring-your-own-key"
+    "bring-your-own-key",
+    "lint",
+    "i18n-qa",
+    "translation-quality"
   ],
   "author": "Shipi18n",
   "license": "Apache-2.0",

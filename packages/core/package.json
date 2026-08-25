@@ -1,7 +1,7 @@
 {
   "name": "@shipi18n/core",
   "version": "2.5.0",
-  "description": "Translation QA for i18n locale files: placeholder and plural validation, key parity, coverage, and an LLM-as-judge semantic review. Also a structure-preserving translation engine \u2014 bring your own OpenAI or Anthropic key.",
+  "description": "Translation QA for i18n locale files: placeholder and plural validation, key parity, coverage, and an LLM-as-judge semantic review. Also a structure-preserving translation engine — bring your own OpenAI or Anthropic key.",
   "type": "module",
   "main": "src/index.js",
   "exports": {
@@ -34,7 +34,10 @@
     "openai",
     "anthropic",
     "localization",
-    "bring-your-own-key"
+    "bring-your-own-key",
+    "linter",
+    "icu",
+    "l10n"
   ],
   "license": "Apache-2.0",
   "author": "Shipi18n",

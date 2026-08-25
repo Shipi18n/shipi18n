@@ -1,7 +1,7 @@
 {
   "name": "@shipi18n/mcp",
   "version": "2.1.0",
-  "description": "MCP server for i18n quality assurance \u2014 check, diff and review locale files from any MCP client. Validation needs no API key.",
+  "description": "MCP server for i18n quality assurance — check, diff and review locale files from any MCP client. Validation needs no API key.",
   "type": "module",
   "bin": {
     "shipi18n-mcp": "./src/server.js"
@@ -31,7 +31,10 @@
     "linting",
     "localization",
     "llm",
-    "bring-your-own-key"
+    "bring-your-own-key",
+    "i18n-qa",
+    "translation-quality",
+    "agent"
   ],
   "license": "Apache-2.0",
   "author": "Shipi18n",

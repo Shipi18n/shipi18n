@@ -18,7 +18,8 @@
     "openai",
     "anthropic",
     "bring-your-own-key",
-    "automation"
+    "automation",
+    "ci"
   ],
   "author": "Shipi18n",
   "license": "Apache-2.0",

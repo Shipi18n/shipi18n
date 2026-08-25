@@ -1,7 +1,7 @@
 {
   "name": "@shipi18n/cli",
   "version": "2.5.0",
-  "description": "Catch broken translations before you ship: dropped placeholders, missing keys, collapsed plurals and \u2014 with your own LLM key \u2014 mistranslations the structure checks cannot see. CI-ready (SARIF, JUnit, exit codes). Translates too.",
+  "description": "Catch broken translations before you ship: dropped placeholders, missing keys, collapsed plurals and — with your own LLM key — mistranslations the structure checks cannot see. CI-ready (SARIF, JUnit, exit codes). Translates too.",
   "type": "module",
   "bin": {
     "shipi18n": "./bin/shipi18n.js"
@@ -34,7 +34,12 @@
     "openai",
     "anthropic",
     "localization",
-    "bring-your-own-key"
+    "bring-your-own-key",
+    "linter",
+    "icu",
+    "i18next",
+    "l10n",
+    "check"
   ],
   "license": "Apache-2.0",
   "author": "Shipi18n",
