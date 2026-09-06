@@ -1,5 +1,12 @@
 # @shipi18n/cli
 
+## 2.5.1
+
+- New: every check finding now links to its rule page. The human reporter prints
+  `<rule> → https://shipi18n.com/docs/rules/<rule>` for each finding type seen, and the SARIF
+  reporter sets a per-rule `helpUri` — so GitHub's inline PR annotations link to the page that
+  explains the rule, what triggers it, how to fix it, and how to silence it.
+
 ## 2.5.0
 
 - New: `--base-url <url>` on `translate` and `check` — run against any OpenAI-compatible endpoint

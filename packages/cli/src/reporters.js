@@ -6,6 +6,10 @@
  */
 import chalk from 'chalk'
 
+/** Every rule has a documentation page; SARIF helpUri and the human footer
+ *  point at it. Ids must match RULE_META below and the site's checkRules.js. */
+const ruleUrl = (type) => `https://shipi18n.com/docs/rules/${type}`
+
 /* ------------------------------------------------------------------ human */
 
 export function humanReport(result, verdictResult) {
@@ -27,6 +31,13 @@ export function humanReport(result, verdictResult) {
       lines.push(`    ${color(f.severity)}  ${chalk.cyan(where)}  ${f.type} — ${f.message}`)
     }
     if (all.length > 50) lines.push(chalk.gray(`    … and ${all.length - 50} more`))
+  }
+  const seenTypes = [
+    ...new Set(result.languages.flatMap((l) => l.namespaces.flatMap((n) => n.findings.map((f) => f.type)))),
+  ].sort()
+  if (seenTypes.length > 0) {
+    lines.push('')
+    for (const t of seenTypes) lines.push(chalk.gray(`  ${t} → ${ruleUrl(t)}`))
   }
   lines.push('')
   lines.push(
@@ -94,7 +105,7 @@ export function sarifReport(result, _verdictResult, { toolVersion = '0.0.0' } = 
             rules: usedTypes.map((t) => ({
               id: t,
               shortDescription: { text: RULE_META[t] || t },
-              helpUri: 'https://shipi18n.com/docs/cli/commands',
+              helpUri: ruleUrl(t),
             })),
           },
         },
