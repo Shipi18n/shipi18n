@@ -1,0 +1,25 @@
+# Publish server.json to the official MCP Registry.
+# Runs on manual dispatch. Auth is GitHub Actions OIDC: a workflow in this org
+# repo is inherently allowed to publish io.github.Shipi18n/* — no user OAuth
+# token, no org third-party-app approval needed.
+name: mcp-registry
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write   # OIDC token for registry auth
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install mcp-publisher
+        run: |
+          curl -sL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/').tar.gz" | tar xz mcp-publisher
+      - name: Publish to registry
+        run: |
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish

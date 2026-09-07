@@ -6,26 +6,26 @@
     "url": "https://github.com/Shipi18n/shipi18n",
     "source": "github"
   },
-  "version": "2.1.0",
+  "version": "2.1.1",
   "websiteUrl": "https://shipi18n.com",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@shipi18n/mcp",
-      "version": "2.1.0",
+      "version": "2.1.1",
       "transport": {
         "type": "stdio"
       },
       "environmentVariables": [
         {
-          "description": "Optional — used only by the translate tools; all validator tools run with no API key",
+          "description": "Optional \u2014 used only by the translate tools; all validator tools run with no API key",
           "isRequired": false,
           "format": "string",
           "isSecret": true,
           "name": "ANTHROPIC_API_KEY"
         },
         {
-          "description": "Optional — alternative provider key for the translate tools",
+          "description": "Optional \u2014 alternative provider key for the translate tools",
           "isRequired": false,
           "format": "string",
           "isSecret": true,
