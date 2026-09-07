@@ -1,0 +1,130 @@
+[
+  {
+    "model": "anthropic:claude-haiku-4-5",
+    "split": "public",
+    "passes": 3,
+    "pairs": 228,
+    "planted": 54,
+    "clean": 168,
+    "caught": 54,
+    "catchRate": 1,
+    "labelAccuracy": 0.9814814814814815,
+    "falsePositives": 13,
+    "fpRate": 0.07738095238095238,
+    "categoryRecall": {
+      "mistranslation": 1,
+      "omission": 1,
+      "addition": 1
+    },
+    "calls": 48,
+    "parseFailures": 0,
+    "approxTokens": 58534,
+    "seconds": 188
+  },
+  {
+    "model": "anthropic:claude-opus-5",
+    "split": "public",
+    "passes": 3,
+    "pairs": 228,
+    "planted": 54,
+    "clean": 168,
+    "caught": 54,
+    "catchRate": 1,
+    "labelAccuracy": 1,
+    "falsePositives": 6,
+    "fpRate": 0.03571428571428571,
+    "categoryRecall": {
+      "mistranslation": 1,
+      "omission": 1,
+      "addition": 1
+    },
+    "calls": 48,
+    "parseFailures": 0,
+    "approxTokens": 54711,
+    "seconds": 324
+  },
+  {
+    "model": "anthropic:claude-sonnet-5",
+    "split": "public",
+    "passes": 3,
+    "pairs": 228,
+    "planted": 54,
+    "clean": 168,
+    "caught": 54,
+    "catchRate": 1,
+    "labelAccuracy": 1,
+    "falsePositives": 6,
+    "fpRate": 0.03571428571428571,
+    "categoryRecall": {
+      "mistranslation": 1,
+      "omission": 1,
+      "addition": 1
+    },
+    "calls": 48,
+    "parseFailures": 0,
+    "approxTokens": 54215,
+    "seconds": 258
+  },
+  {
+    "model": "gemini:gemini-3.8-flash",
+    "split": "public",
+    "passes": 3,
+    "pairs": 228,
+    "planted": 54,
+    "clean": 168,
+    "caught": 54,
+    "catchRate": 1,
+    "labelAccuracy": 1,
+    "falsePositives": 6,
+    "fpRate": 0.03571428571428571,
+    "categoryRecall": {
+      "mistranslation": 1,
+      "omission": 1,
+      "addition": 1
+    },
+    "calls": 48,
+    "parseFailures": 0,
+    "approxTokens": 55801,
+    "seconds": 221
+  },
+  {
+    "model": "gemini:gemini-pro-latest",
+    "split": "public",
+    "passes": 3,
+    "pairs": 228,
+    "planted": 54,
+    "clean": 168,
+    "caught": 54,
+    "catchRate": 1,
+    "labelAccuracy": 1,
+    "falsePositives": 6,
+    "fpRate": 0.03571428571428571,
+    "categoryRecall": {
+      "mistranslation": 1,
+      "omission": 1,
+      "addition": 1
+    },
+    "calls": 48,
+    "parseFailures": 0,
+    "approxTokens": 58240,
+    "seconds": 595
+  },
+  {
+    "model": "deterministic-only (no LLM)",
+    "split": "public",
+    "passes": 0,
+    "pairs": 228,
+    "planted": 54,
+    "clean": 168,
+    "caught": 0,
+    "catchRate": 0,
+    "labelAccuracy": null,
+    "falsePositives": 0,
+    "fpRate": 0,
+    "categoryRecall": {
+      "mistranslation": 0,
+      "omission": 0,
+      "addition": 0
+    }
+  }
+]
