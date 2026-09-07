@@ -20,3 +20,7 @@ export { parseXcstrings } from './formats/xcstrings.js'
 export { reviewTranslations, DEFAULT_JUDGE_MODELS, buildReviewPrompt, parseVerdicts, pairHash } from './review.js'
 export { getLanguageName, LANGUAGE_NAMES } from './languages.js'
 export { anthropicAdapter, openaiAdapter, resolveAdapter } from './adapters/index.js'
+// Reporters + verdict lived in the CLI through 2.5.x; lifted here (core 2.6.0)
+// so the GitHub Action can run `check` without depending on the CLI. The CLI
+// re-exports these names for compatibility.
+export { humanReport, jsonReport, sarifReport, junitReport, REPORTERS, RULE_META, verdict } from './reporters.js'

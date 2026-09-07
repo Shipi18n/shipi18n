@@ -1,5 +1,10 @@
 # @shipi18n/cli
 
+## 2.6.0
+
+- Refactor: reporters and `verdict` now live in `@shipi18n/core` (2.6.0) and are re-exported here
+  unchanged. No behavior change; import sites keep working.
+
 ## 2.5.1
 
 - New: every check finding now links to its rule page. The human reporter prints

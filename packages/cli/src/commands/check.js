@@ -22,6 +22,7 @@ import {
   statsFrom,
   aggregateLanguage,
   SEP,
+  verdict,
 } from '@shipi18n/core'
 import { REPORTERS } from '../reporters.js'
 import { locksFor, DEFAULT_LOCKS_PATH } from './lock.js'
@@ -39,20 +40,9 @@ export { runCheck, runSemantic, discoverLayout, compileIgnores, statsFrom, aggre
 
 /* ---------------------------------------------------------------- verdict */
 
-/** Decide the exit code from findings and flags. Reporters never influence this. */
-export function verdict(result, { failOn = 'error', minCoverage } = {}) {
-  const failures = []
-  if (failOn === 'error' && result.totals.errors > 0) failures.push(`${result.totals.errors} error(s)`)
-  if (failOn === 'warning' && result.totals.errors + result.totals.warnings > 0)
-    failures.push(`${result.totals.errors} error(s), ${result.totals.warnings} warning(s)`)
-  if (minCoverage != null) {
-    for (const l of result.languages) {
-      if (l.stats.coverage * 100 < minCoverage)
-        failures.push(`${l.lang} coverage ${(l.stats.coverage * 100).toFixed(1)}% < ${minCoverage}%`)
-    }
-  }
-  return { ok: failures.length === 0, failures }
-}
+// Lifted into @shipi18n/core in 2.6.0 (the Action needs it without the CLI).
+// Re-exported because the CLI tests and semantic pass import it from here.
+export { verdict }
 
 /* ---------------------------------------------------------------- command */
 

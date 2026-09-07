@@ -1,5 +1,12 @@
 # @shipi18n/core
 
+## 2.6.0
+
+- New: reporters (`humanReport`, `jsonReport`, `sarifReport`, `junitReport`, `REPORTERS`,
+  `RULE_META`) and `verdict` lifted from the CLI into core, so any surface — the GitHub Action
+  first — can run a full `check` with exit-code semantics and SARIF output without depending on
+  the CLI. The CLI re-exports every name; nothing breaks.
+
 ## 2.5.0
 
 - New: the `openai` adapter accepts `baseURL`, pointing it at any OpenAI-compatible endpoint —
