@@ -3,6 +3,7 @@
 [![CI](https://github.com/Shipi18n/shipi18n/actions/workflows/ci.yml/badge.svg)](https://github.com/Shipi18n/shipi18n/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@shipi18n/core?label=%40shipi18n%2Fcore)](https://www.npmjs.com/package/@shipi18n/core)
 [![MCP](https://img.shields.io/npm/v/@shipi18n/mcp?label=%40shipi18n%2Fmcp)](https://www.npmjs.com/package/@shipi18n/mcp)
+[![downloads](https://img.shields.io/npm/dm/@shipi18n/cli?label=downloads)](https://www.npmjs.com/package/@shipi18n/cli)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 **Catch broken translations before you ship them.** An open-source QA gate for your locale files —
@@ -22,6 +23,9 @@ npx @shipi18n/cli check ./locales -s en
 
 No API key, no account, no config. Missing keys, dropped placeholders, collapsed plurals, empty
 values and untranslated copy — as human output, JSON, SARIF (GitHub PR annotations) or JUnit.
+
+> If the check catches something in your project, consider starring the repo — stars are how the
+> next person with a broken `es.json` finds this.
 
 Then, when you want the **meaning** checked, bring your own key. The judge needs a provider SDK
 alongside the CLI:

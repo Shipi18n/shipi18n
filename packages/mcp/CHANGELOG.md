@@ -1,5 +1,9 @@
 # @shipi18n/mcp
 
+## 2.1.1
+
+- Add MCP Registry ownership marker (`mcpName` + README marker) for registry.modelcontextprotocol.io. No functional changes.
+
 ## 2.1.0
 
 - New: four keyless validator tools — `check_locales`, `check_glossary`, `diff_locales` and

@@ -1,6 +1,7 @@
 {
   "name": "@shipi18n/mcp",
-  "version": "2.1.0",
+  "mcpName": "io.github.Shipi18n/shipi18n",
+  "version": "2.1.1",
   "description": "MCP server for i18n quality assurance — check, diff and review locale files from any MCP client. Validation needs no API key.",
   "type": "module",
   "bin": {

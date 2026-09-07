@@ -1,5 +1,9 @@
 # @shipi18n/mcp
 
+<!-- MCP registry ownership marker -->
+mcp-name: io.github.Shipi18n/shipi18n
+
+
 A [Model Context Protocol](https://modelcontextprotocol.io) server for **i18n quality assurance** —
 check, diff and review your locale files straight from any MCP client (Claude Desktop, Cursor, …).
 
