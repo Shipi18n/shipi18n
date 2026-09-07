@@ -1,5 +1,14 @@
 # @shipi18n/core
 
+## 2.6.1
+
+- Fix: the OpenAI adapter sent `max_tokens`, which current OpenAI models (gpt-5.x) reject with a
+  400 — `check --semantic -p openai` and `translate -p openai` failed against api.openai.com. The
+  adapter now sends `max_completion_tokens` to api.openai.com and keeps `max_tokens` for
+  OpenAI-compatible endpoints (Ollama, Gemini compat, LM Studio, vLLM), with a one-shot fallback
+  on the telltale 400 in either direction. Found by running the UIStringBench leaderboard against
+  live GPT judges.
+
 ## 2.6.0
 
 - New: reporters (`humanReport`, `jsonReport`, `sarifReport`, `junitReport`, `REPORTERS`,

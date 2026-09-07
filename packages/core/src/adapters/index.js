@@ -103,15 +103,35 @@ export function openaiAdapter(config = {}) {
     return clientPromise
   }
 
+  // Current OpenAI models (gpt-5.x era) reject `max_tokens` and require
+  // `max_completion_tokens`; OpenAI-compatible endpoints (Ollama, Gemini
+  // compat, LM Studio, vLLM) mostly still speak `max_tokens`. Try the modern
+  // name against api.openai.com and the legacy name against custom baseURLs,
+  // and fall back once on the telltale 400 either way.
+  let tokenParam = config.baseURL ? 'max_tokens' : 'max_completion_tokens'
   return {
     name: 'openai',
     async complete(prompt, opts = {}) {
       const client = await getClient()
-      const res = await client.chat.completions.create({
-        model,
-        max_tokens: opts.maxTokens || 4096,
-        messages: [{ role: 'user', content: prompt }],
-      })
+      const request = (param) =>
+        client.chat.completions.create({
+          model,
+          [param]: opts.maxTokens || 4096,
+          messages: [{ role: 'user', content: prompt }],
+        })
+      let res
+      try {
+        res = await request(tokenParam)
+      } catch (err) {
+        const msg = String(err?.message || '')
+        const other = tokenParam === 'max_tokens' ? 'max_completion_tokens' : 'max_tokens'
+        if (err?.status === 400 && msg.includes(other)) {
+          tokenParam = other // remember for subsequent calls
+          res = await request(other)
+        } else {
+          throw err
+        }
+      }
       const content = res.choices?.[0]?.message?.content
       if (!content) throw new Error('OpenAI response contained no content')
       return content.trim()
