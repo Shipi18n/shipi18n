@@ -13,5 +13,7 @@ FROM node:22-alpine
 RUN npm install -g @shipi18n/mcp@2.1.0 \
   && npm cache clean --force
 
-# stdio transport — the MCP client speaks over stdin/stdout
-ENTRYPOINT ["shipi18n-mcp"]
+# stdio transport — the MCP client speaks over stdin/stdout.
+# CMD (not ENTRYPOINT) so platforms that supply their own command — Glama's
+# build spec requires at least one command argument — override cleanly.
+CMD ["shipi18n-mcp"]
