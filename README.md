@@ -5,6 +5,7 @@
 [![MCP](https://img.shields.io/npm/v/@shipi18n/mcp?label=%40shipi18n%2Fmcp)](https://www.npmjs.com/package/@shipi18n/mcp)
 [![downloads](https://img.shields.io/npm/dm/@shipi18n/cli?label=downloads)](https://www.npmjs.com/package/@shipi18n/cli)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+[![smithery badge](https://smithery.ai/badge/ogreenowow/shipi18n)](https://smithery.ai/servers/ogreenowow/shipi18n)
 
 **Catch broken translations before you ship them.** An open-source QA gate for your locale files —
 and, when you want it, an i18n translation engine that runs on your own LLM key.
