@@ -1,5 +1,12 @@
 # @shipi18n/mcp
 
+## 2.2.0
+
+- New: every tool now declares MCP `annotations` (readOnlyHint/openWorldHint; translate_file marks
+  destructiveHint) and, where the shape is stable, an `outputSchema`. Validator tools now return
+  `structuredContent` alongside the text payload. Better behavior in Claude Code/Cursor tool UIs
+  and richer metadata for registries. No breaking changes.
+
 ## 2.1.1
 
 - Add MCP Registry ownership marker (`mcpName` + README marker) for registry.modelcontextprotocol.io. No functional changes.

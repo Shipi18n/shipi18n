@@ -31,6 +31,8 @@ export function translateJsonTool(mcpServer, env) {
     name: 'translate_json',
     config: {
       title: 'Translate JSON',
+      annotations: { readOnlyHint: true, openWorldHint: true },
+      outputSchema: { translations: z.record(z.any()), warnings: z.array(z.any()), mode: z.string() },
       description:
         'Translate an i18n locale JSON object to one or more target languages, preserving structure and placeholders. ' +
         'Requires your own LLM key (ANTHROPIC_API_KEY/OPENAI_API_KEY). For key-free work use the validation tools. Legacy: the MCP client\'s model via sampling.',
@@ -79,6 +81,8 @@ export function translateFileTool(mcpServer, env) {
     name: 'translate_file',
     config: {
       title: 'Translate File',
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
+      outputSchema: { written: z.any(), warnings: z.array(z.any()), mode: z.string() },
       description:
         'Read a JSON locale file from disk, translate it into one or more languages, and write <lang>.json files. ' +
         'Set incremental=true to reuse existing output files and only translate new/missing keys.',
@@ -137,6 +141,8 @@ export function listLanguagesTool() {
     name: 'list_languages',
     config: {
       title: 'List Languages',
+      annotations: { readOnlyHint: true, openWorldHint: false },
+      outputSchema: { languages: z.array(z.any()) },
       description: 'List the language codes and names Shipi18n recognizes (any BCP-47 code works; these have friendly names).',
       inputSchema: {},
     },
@@ -154,6 +160,7 @@ export function checkPlaceholdersTool() {
     name: 'check_placeholders',
     config: {
       title: 'Check Placeholders',
+      annotations: { readOnlyHint: true, openWorldHint: false },
       description: 'Verify a translated string preserves all placeholders from the source (no LLM call).',
       inputSchema: {
         source: z.string().describe('The source string'),

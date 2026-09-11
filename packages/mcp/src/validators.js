@@ -17,7 +17,12 @@ import { runCheck, SEP } from '@shipi18n/core'
 const PATH_ARG = z.string().describe('Path to the locale tree, .arb directory, or .xcstrings file')
 const SOURCE_ARG = z.string().default('en').describe('Source language code')
 
-const ok = (payload) => ({ content: [{ type: 'text', text: JSON.stringify(payload, null, 2) }] })
+// Text for humans/simple clients, structuredContent for clients that read it —
+// and the declared outputSchema makes the shape discoverable to registries.
+const ok = (payload) => ({
+  content: [{ type: 'text', text: JSON.stringify(payload, null, 2) }],
+  structuredContent: payload,
+})
 const fail = (message) => ({ isError: true, content: [{ type: 'text', text: message }] })
 
 const readGlossary = (path) => (path ? JSON.parse(readFileSync(path, 'utf8')) : undefined)
@@ -49,6 +54,8 @@ export function checkLocalesTool() {
     name: 'check_locales',
     config: {
       title: 'Check locale files',
+      annotations: { readOnlyHint: true, openWorldHint: false },
+      outputSchema: { layout: z.string(), source: z.string(), totals: z.record(z.number()), languages: z.array(z.any()) },
       description:
         'Validate translated locale files against the source language: missing/orphaned keys, ' +
         'dropped or invented placeholders, collapsed plurals, empty values, untranslated copy. ' +
@@ -76,6 +83,8 @@ export function checkGlossaryTool() {
     name: 'check_glossary',
     config: {
       title: 'Check glossary compliance',
+      annotations: { readOnlyHint: true, openWorldHint: false },
+      outputSchema: { terms: z.array(z.string()), violations: z.array(z.any()), count: z.number() },
       description:
         'Enforce do-not-translate terms and locked per-language translations across a locale tree. ' +
         'Deterministic string matching — no API key and no model call required.',
@@ -109,6 +118,8 @@ export function diffLocalesTool() {
     name: 'diff_locales',
     config: {
       title: 'Diff locales against the source',
+      annotations: { readOnlyHint: true, openWorldHint: false },
+      outputSchema: { source: z.string(), languages: z.array(z.any()) },
       description:
         'Answer "what needs translating?": per language, the keys missing from the translation and ' +
         'the keys present that no longer exist in the source. No API key required.',
@@ -151,6 +162,8 @@ export function reviewLocalesTool() {
     name: 'review_locales',
     config: {
       title: 'Get translation pairs for semantic review',
+      annotations: { readOnlyHint: true, openWorldHint: false },
+      outputSchema: { instructions: z.string(), criteria: z.array(z.any()), lang: z.string(), source: z.string(), returned: z.number(), excludedStructurallyBroken: z.number(), pairs: z.array(z.any()) },
       description:
         'Return source/translation pairs plus review criteria so YOU can judge translation quality ' +
         'with your own reasoning. The server performs no model call and needs no API key. ' +
