@@ -102,7 +102,15 @@ Plus the parts that make it usable day to day:
 ## Check from your editor — no API key
 
 `@shipi18n/mcp` brings the checks to any MCP client. The validation tools call no model, so they need
-no key at all:
+no key at all.
+
+**Claude Code** — one line:
+
+```bash
+claude mcp add shipi18n -- npx -y @shipi18n/mcp
+```
+
+**Claude Desktop / any MCP client** — paste the config:
 
 ```jsonc
 // claude_desktop_config.json

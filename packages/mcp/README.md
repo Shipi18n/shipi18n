@@ -12,7 +12,13 @@ your own provider key.
 
 ## Install
 
-Add it to your MCP client config. For **Claude Desktop** (`claude_desktop_config.json`):
+**Claude Code** — one line:
+
+```bash
+claude mcp add shipi18n -- npx -y @shipi18n/mcp
+```
+
+**Claude Desktop** — add it to `claude_desktop_config.json`:
 
 ```json
 {
