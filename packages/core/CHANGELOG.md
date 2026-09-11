@@ -1,5 +1,17 @@
 # @shipi18n/core
 
+## 2.8.0
+
+- New: **ICU MessageFormat validation** (P6). When a source string is an ICU plural/select message,
+  it's now checked ICU-aware:
+  - `plural-category` (warning): the translation's ICU plural is missing a plural category the
+    target language needs for everyday counts under CLDR — e.g. a Russian plural with only
+    one/other, missing few/many. Categories come from the runtime's `Intl.PluralRules` (no data
+    dep); Spanish/French "many" (compact-notation only) is deliberately not flagged.
+  - `icu-invalid` (error): the source is valid ICU but the translation no longer parses.
+  - Fixes a real false positive: ICU select sub-messages (`{he}`/`{she}`) are no longer mistaken
+    for placeholders. Adds `@formatjs/icu-messageformat-parser`.
+
 ## 2.7.0
 
 - New: **YAML locale files** (`.yaml` / `.yml`) are checked alongside JSON — flat and nested trees,

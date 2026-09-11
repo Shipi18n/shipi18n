@@ -7,6 +7,7 @@
  */
 import { flatten } from './translate.js'
 import { validatePlaceholders } from './placeholders.js'
+import { isICUControl, checkICU } from './icu.js'
 
 /**
  * vue-i18n expresses plurals as one pipe-separated string
@@ -121,28 +122,34 @@ export function checkTranslations({ source, target, targetLang = 'target', gloss
       continue
     }
 
-    const { missing, added } = validatePlaceholders(s, t)
-    if (missing.length) {
-      findings.push({
-        type: 'placeholder-missing',
-        severity: 'error',
-        path,
-        missing,
-        message: `dropped ${missing.join(', ')}`,
-        source: s,
-        translation: t,
-      })
-    }
-    if (added.length) {
-      findings.push({
-        type: 'placeholder-added',
-        severity: 'warning',
-        path,
-        added,
-        message: `unexpected ${added.join(', ')}`,
-        source: s,
-        translation: t,
-      })
+    // ICU MessageFormat (plural/select) is validated ICU-aware — the regex
+    // placeholder check would read its sub-messages as bogus placeholders.
+    if (isICUControl(s)) {
+      findings.push(...checkICU(s, t, targetLang, path))
+    } else {
+      const { missing, added } = validatePlaceholders(s, t)
+      if (missing.length) {
+        findings.push({
+          type: 'placeholder-missing',
+          severity: 'error',
+          path,
+          missing,
+          message: `dropped ${missing.join(', ')}`,
+          source: s,
+          translation: t,
+        })
+      }
+      if (added.length) {
+        findings.push({
+          type: 'placeholder-added',
+          severity: 'warning',
+          path,
+          added,
+          message: `unexpected ${added.join(', ')}`,
+          source: s,
+          translation: t,
+        })
+      }
     }
 
     const srcForms = pluralFormCount(s)

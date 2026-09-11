@@ -12,6 +12,7 @@
  */
 export { translateJSON, translateStrings, flatten, unflatten } from './translate.js'
 export { extractPlaceholders, validatePlaceholders } from './placeholders.js'
+export { isICUControl, checkICU } from './icu.js'
 export { checkTranslations } from './check.js'
 export { runCheck, runSemantic, discoverLayout, compileIgnores, statsFrom, aggregateLanguage, SEP } from './tree.js'
 export { lockId, lockEntry, lockFinding, emptyLocks, normalizeLocks, LOCKS_VERSION } from './locks.js'

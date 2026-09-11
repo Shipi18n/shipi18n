@@ -108,3 +108,62 @@ describe('checkTranslations', () => {
     expect(t).toContain('plural-forms')
   })
 })
+
+import { describe as d2, test as t2, expect as e2 } from '@jest/globals'
+d2('ICU MessageFormat (P6)', () => {
+  const check = (source, target, targetLang = 'es') =>
+    checkTranslations({ source, target, targetLang }).findings.map((f) => f.type)
+
+  t2('flags missing CLDR plural categories for the locale (warning)', () => {
+    const f = check(
+      { n: '{count, plural, one {# item} other {# items}}' },
+      { n: '{count, plural, one {# элемент} other {# элементов}}' },
+      'ru'
+    )
+    e2(f).toContain('plural-category')
+  })
+
+  t2('a complete Russian plural is clean', () => {
+    const f = check(
+      { n: '{count, plural, one {# item} other {# items}}' },
+      { n: '{count, plural, one {# элемент} few {# элемента} many {# элементов} other {# элемента}}' },
+      'ru'
+    )
+    e2(f).not.toContain('plural-category')
+    e2(f).not.toContain('placeholder-missing')
+  })
+
+  t2('ICU select sub-messages are NOT read as placeholders (regression fix)', () => {
+    const f = check(
+      { g: '{gender, select, male {he} female {she} other {they}}' },
+      { g: '{gender, select, male {él} female {ella} other {elle}}' }
+    )
+    e2(f).not.toContain('placeholder-missing')
+    e2(f).not.toContain('placeholder-added')
+  })
+
+  t2('dropped ICU argument is placeholder-missing', () => {
+    const f = check(
+      { m: 'Hi {name}, {count, plural, one {# msg} other {# msgs}}' },
+      { m: 'Hola, {count, plural, one {# msg} other {# msgs}}' }
+    )
+    e2(f).toContain('placeholder-missing')
+  })
+
+  t2('malformed ICU in a translation is icu-invalid', () => {
+    const f = check(
+      { n: '{count, plural, one {# item} other {# items}}' },
+      { n: '{count, plural, one {# elemento' }
+    )
+    e2(f).toContain('icu-invalid')
+  })
+
+  t2('English one/other plural stays clean (no false positive on complete locales)', () => {
+    const f = check(
+      { n: '{count, plural, one {# item} other {# items}}' },
+      { n: '{count, plural, one {# elemento} other {# elementos}}' },
+      'es'
+    )
+    e2(f).not.toContain('plural-category')
+  })
+})

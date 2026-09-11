@@ -1,5 +1,11 @@
 # @shipi18n/cli
 
+## 2.8.0
+
+- New: ICU MessageFormat checks via core 2.8.0 — `plural-category` (missing CLDR plural categories,
+  warning) and `icu-invalid` (malformed ICU, error). ICU select sub-messages are no longer
+  mis-flagged as placeholders.
+
 ## 2.7.0
 
 - New: `shipi18n check` now validates **YAML locale files** (`.yaml`/`.yml`), flat or nested,

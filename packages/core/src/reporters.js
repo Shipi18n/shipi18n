@@ -62,6 +62,8 @@ export const RULE_META = {
   'placeholder-missing': 'A placeholder from the source string was dropped in the translation.',
   'placeholder-added': 'The translation contains a placeholder the source does not have.',
   'plural-forms': 'A pipe-separated plural lost one or more of its forms in translation.',
+  'plural-category': 'An ICU plural is missing a plural category the target language requires under CLDR.',
+  'icu-invalid': 'The source is valid ICU MessageFormat but the translation does not parse as ICU.',
   'empty-value': 'The translation of a non-empty source string is empty.',
   'untranslated': 'The translation is identical to a multi-word source string.',
   'type-mismatch': 'Source and translation values have different JSON types.',
