@@ -140,3 +140,48 @@ describe('verdict', () => {
     expect(v.failures[0]).toMatch(/es coverage 80.0% < 95%/)
   })
 })
+
+describe('YAML locale support (P5)', () => {
+  test('flat YAML tree: catches dropped placeholder and missing key', () => {
+    write('en.yaml', 'greeting: "Hello {{name}}"\nbye: "Goodbye"\n')
+    write('es.yaml', 'greeting: "Hola"\n') // dropped {{name}}, missing bye
+    const r = runCheck({ input: dir, source: 'en' })
+    const es = r.languages.find((l) => l.lang === 'es')
+    const types = es.namespaces.flatMap((n) => n.findings.map((f) => f.type))
+    expect(types).toContain('placeholder-missing')
+    expect(types).toContain('missing-key')
+  })
+
+  test('flat .yml extension works too, and a clean tree passes', () => {
+    write('en.yml', 'greeting: "Hello {{name}}"\n')
+    write('es.yml', 'greeting: "Hola {{name}}"\n')
+    const r = runCheck({ input: dir, source: 'en' })
+    expect(r.totals.errors).toBe(0)
+  })
+
+  test('nested YAML tree by namespace', () => {
+    write('en/common.yaml', 'save: "Save {{count}} items"\n')
+    write('es/common.yaml', 'save: "Guardar"\n') // dropped {{count}}
+    const r = runCheck({ input: dir, source: 'en' })
+    const es = r.languages.find((l) => l.lang === 'es')
+    const types = es.namespaces.flatMap((n) => n.findings.map((f) => f.type))
+    expect(types).toContain('placeholder-missing')
+  })
+
+  test('broken YAML is a parse finding, not a crash', () => {
+    write('en.yaml', 'greeting: "Hello"\n')
+    write('es.yaml', 'greeting: "Hola\n  bad: [unclosed\n') // invalid YAML
+    const r = runCheck({ input: dir, source: 'en' })
+    const es = r.languages.find((l) => l.lang === 'es')
+    const types = es.namespaces.flatMap((n) => n.findings.map((f) => f.type))
+    expect(types).toContain('invalid-json') // rule id is generic for parse failures
+  })
+
+  test('JSON still works unchanged when a YAML file is not present', () => {
+    write('en.json', { a: 'Hello {{x}}' })
+    write('es.json', { a: 'Hola' })
+    const r = runCheck({ input: dir, source: 'en' })
+    const es = r.languages.find((l) => l.lang === 'es')
+    expect(es.namespaces.flatMap((n) => n.findings.map((f) => f.type))).toContain('placeholder-missing')
+  })
+})

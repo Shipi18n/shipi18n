@@ -11,8 +11,17 @@
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs'
 import { join, basename, resolve, relative, dirname } from 'node:path'
 import { checkTranslations } from './check.js'
+import { parse as parseYaml } from 'yaml'
 import { parseArbBundle } from './formats/arb.js'
 import { parseXcstrings } from './formats/xcstrings.js'
+
+// Locale files are JSON or YAML. The check logic is format-agnostic once the
+// file is parsed to an object, so support is entirely a parse + discovery
+// concern. `.json` is matched first so it stays the default when both exist.
+const LOCALE_EXT = /\.(json|ya?ml)$/i
+const stripExt = (name) => name.replace(LOCALE_EXT, '')
+const readData = (file) =>
+  /\.ya?ml$/i.test(file) ? parseYaml(readFileSync(file, 'utf8')) : JSON.parse(readFileSync(file, 'utf8'))
 import { flatten } from './translate.js'
 import { lockId, lockFinding } from './locks.js'
 import { reviewTranslations } from './review.js'
@@ -37,19 +46,19 @@ export function discoverLayout(inputPath, sourceLang) {
 
   if (statSync(path).isFile()) {
     const dir = resolve(path, '..')
-    const lang = basename(path).replace(/\.json$/, '')
+    const lang = stripExt(basename(path))
     return flatLayout(dir, lang)
   }
 
   const entries = readdirSync(path, { withFileTypes: true })
-  if (entries.some((e) => e.isFile() && e.name === `${sourceLang}.json`)) {
+  if (entries.some((e) => e.isFile() && LOCALE_EXT.test(e.name) && stripExt(e.name) === sourceLang)) {
     return flatLayout(path, sourceLang)
   }
   if (entries.some((e) => e.isDirectory() && e.name === sourceLang)) {
     return nestedLayout(path, sourceLang)
   }
   throw new Error(
-    `no source locale found: expected ${join(inputPath, sourceLang + '.json')} or ${join(inputPath, sourceLang)}/`
+    `no source locale found: expected ${join(inputPath, sourceLang + '.{json,yaml}')} or ${join(inputPath, sourceLang)}/`
   )
 }
 
@@ -63,18 +72,26 @@ export function discoverLayout(inputPath, sourceLang) {
 const LOCALE_NAME = /^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/
 
 export function flatLayout(dir, sourceLang) {
-  const langs = readdirSync(dir)
-    .filter((f) => f.endsWith('.json') && !f.startsWith('.'))
-    .map((f) => f.replace(/\.json$/, ''))
-    .filter((name) => LOCALE_NAME.test(name) || name === sourceLang)
-  if (!langs.includes(sourceLang)) throw new Error(`source file not found: ${join(dir, sourceLang + '.json')}`)
-  const files = (lang) => ({ translation: join(dir, `${lang}.json`) })
+  // lang → actual file path (extension resolved, since a tree may be .json or
+  // .yaml — .json wins if both somehow exist for the same lang).
+  const pathByLang = {}
+  for (const f of readdirSync(dir).sort()) {
+    if (f.startsWith('.') || !LOCALE_EXT.test(f)) continue
+    const name = stripExt(f)
+    if (!(LOCALE_NAME.test(name) || name === sourceLang)) continue
+    if (!pathByLang[name] || f.endsWith('.json')) pathByLang[name] = join(dir, f)
+  }
+  const langs = Object.keys(pathByLang)
+  if (!langs.includes(sourceLang))
+    throw new Error(`source file not found: ${join(dir, sourceLang + '.{json,yaml}')}`)
   return {
     layout: 'flat',
     dir,
     sourceLang,
-    source: files(sourceLang),
-    targets: langs.filter((l) => l !== sourceLang).map((lang) => ({ lang, files: files(lang) })),
+    source: { translation: pathByLang[sourceLang] },
+    targets: langs
+      .filter((l) => l !== sourceLang)
+      .map((lang) => ({ lang, files: { translation: pathByLang[lang] } })),
   }
 }
 
@@ -91,12 +108,15 @@ export function nestedLayout(dir, sourceLang) {
         (LOCALE_NAME.test(e.name) || e.name === sourceLang)
     )
     .map((e) => e.name)
-  const nsFiles = (lang) =>
-    Object.fromEntries(
-      readdirSync(join(dir, lang))
-        .filter((f) => f.endsWith('.json'))
-        .map((f) => [f.replace(/\.json$/, ''), join(dir, lang, f)])
-    )
+  const nsFiles = (lang) => {
+    const out = {}
+    for (const f of readdirSync(join(dir, lang)).sort()) {
+      if (!LOCALE_EXT.test(f)) continue
+      const ns = stripExt(f)
+      if (!out[ns] || f.endsWith('.json')) out[ns] = join(dir, lang, f)
+    }
+    return out
+  }
   return {
     layout: 'nested',
     dir,
@@ -182,7 +202,7 @@ export function jsonMode({ input, source, isIgnored, glossary, locks }) {
   const layout = discoverLayout(input, source)
 
   const sourceData = {}
-  for (const [ns, file] of Object.entries(layout.source)) sourceData[ns] = readJson(file) // broken source = usage error
+  for (const [ns, file] of Object.entries(layout.source)) sourceData[ns] = readData(file) // broken source = usage error
 
   const perLang = {}
   const languages = []
@@ -200,9 +220,9 @@ export function jsonMode({ input, source, isIgnored, glossary, locks }) {
       }
       let data
       try {
-        data = readJson(file)
+        data = readData(file)
       } catch (err) {
-        const findings = [{ type: 'invalid-json', severity: 'error', path: ns, message: `invalid JSON: ${err.message}` }]
+        const findings = [{ type: 'invalid-json', severity: 'error', path: ns, message: `could not parse ${rel(file)}: ${err.message}` }]
         namespaces.push({ ns, file: rel(file), findings, stats: statsFrom(findings, srcKeys, 0) })
         continue
       }

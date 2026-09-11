@@ -1,5 +1,10 @@
 # @shipi18n/cli
 
+## 2.7.0
+
+- New: `shipi18n check` now validates **YAML locale files** (`.yaml`/`.yml`), flat or nested,
+  the same as JSON (via core 2.7.0).
+
 ## 2.6.0
 
 - Refactor: reporters and `verdict` now live in `@shipi18n/core` (2.6.0) and are re-exported here

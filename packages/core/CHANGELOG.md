@@ -1,5 +1,11 @@
 # @shipi18n/core
 
+## 2.7.0
+
+- New: **YAML locale files** (`.yaml` / `.yml`) are checked alongside JSON — flat and nested trees,
+  every existing check (placeholders, plurals, missing/orphan keys, glossary). The check logic was
+  already format-agnostic; this adds parsing + file discovery. Adds one dependency (`yaml`).
+
 ## 2.6.1
 
 - Fix: the OpenAI adapter sent `max_tokens`, which current OpenAI models (gpt-5.x) reject with a
