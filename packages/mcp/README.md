@@ -12,6 +12,8 @@ your own provider key.
 
 ## Install
 
+[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_shipi18n-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](vscode:mcp/install?name=shipi18n&config=%7B%22type%22%3A%22stdio%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40shipi18n/mcp%22%5D%7D)
+
 **Claude Code** — one line:
 
 ```bash
