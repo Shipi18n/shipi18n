@@ -1,6 +1,6 @@
 {
   "name": "@shipi18n/core",
-  "version": "2.8.0",
+  "version": "2.8.1",
   "description": "Translation QA for i18n locale files: placeholder and plural validation, key parity, coverage, and an LLM-as-judge semantic review. Also a structure-preserving translation engine — bring your own OpenAI or Anthropic key.",
   "type": "module",
   "main": "src/index.js",

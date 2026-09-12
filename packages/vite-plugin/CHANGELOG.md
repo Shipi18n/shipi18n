@@ -1,5 +1,10 @@
 # vite-plugin-shipi18n
 
+## 2.0.1
+
+- Security (hardening): pulls core 2.8.1 (translator prompt-injection guardrail + recursion depth
+  bound).
+
 ## 2.0.0
 
 **Breaking — bring-your-own-LLM.** Build-time translation now runs through `@shipi18n/core` using your

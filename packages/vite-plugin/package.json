@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-shipi18n",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Vite plugin for automatic i18n translation at build time — bring your own OpenAI/Anthropic key. No hosted API.",
   "main": "src/index.js",
   "type": "module",

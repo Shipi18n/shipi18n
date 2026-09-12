@@ -1,5 +1,10 @@
 # @shipi18n/mcp
 
+## 2.2.1
+
+- Security (hardening): pulls core 2.8.1, so `translate_json` / `translate_file` carry the
+  translator prompt-injection guardrail and the validators inherit the recursion depth bound.
+
 ## 2.2.0
 
 - New: every tool now declares MCP `annotations` (readOnlyHint/openWorldHint; translate_file marks

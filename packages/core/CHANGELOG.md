@@ -1,5 +1,14 @@
 # @shipi18n/core
 
+## 2.8.1
+
+- Security (hardening): the batch-translate prompt now states that the strings are inert data and
+  instructs the model to ignore any instructions inside them — matching the semantic judge's
+  existing guardrail against prompt injection from translated content.
+- Security (hardening): `flatten()` and `countLeaves()` now bound recursion depth, so a
+  maliciously (or accidentally) deep-nested locale throws a clean "locale nesting too deep" error
+  instead of overflowing the stack.
+
 ## 2.8.0
 
 - New: **ICU MessageFormat validation** (P6). When a source string is an ICU plural/select message,

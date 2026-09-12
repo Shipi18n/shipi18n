@@ -1,5 +1,11 @@
 # @shipi18n/cli
 
+## 2.8.1
+
+- Security (hardening): pulls core 2.8.1 (translator prompt-injection guardrail + recursion depth
+  bound). The `--semantic-cache` help now notes the verdict cache is a per-machine cost cache that
+  should be gitignored — a committed cache is untrusted and could suppress real findings.
+
 ## 2.8.0
 
 - New: ICU MessageFormat checks via core 2.8.0 — `plural-category` (missing CLDR plural categories,
