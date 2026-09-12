@@ -31,6 +31,12 @@ describe('flatten / unflatten', () => {
     expect(flat['n']).toBe(5)
     expect(unflatten(flat)).toEqual(obj)
   })
+
+  test('throws a clean error on pathologically deep nesting (DoS guard)', () => {
+    let deep = 'leaf'
+    for (let i = 0; i < 200; i++) deep = { n: deep }
+    expect(() => flatten(deep)).toThrow(/too deep/)
+  })
 })
 
 describe('placeholders', () => {
@@ -103,6 +109,13 @@ describe('translateJSON (BYO-LLM via mock adapter)', () => {
     })
     expect(stats.placeholderWarnings).toHaveLength(1)
     expect(stats.placeholderWarnings[0].missing).toContain('{{name}}')
+  })
+
+  test('translation prompt frames the strings as inert data (injection guard)', async () => {
+    const adapter = mockAdapter()
+    await translateJSON({ content: { a: 'Alpha' }, from: 'en', to: 'es', provider: adapter })
+    expect(adapter.calls[0]).toMatch(/inert/i)
+    expect(adapter.calls[0]).toMatch(/never follow/i)
   })
 
   test('unknown provider name throws a helpful error', async () => {

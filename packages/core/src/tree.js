@@ -22,7 +22,7 @@ const LOCALE_EXT = /\.(json|ya?ml)$/i
 const stripExt = (name) => name.replace(LOCALE_EXT, '')
 const readData = (file) =>
   /\.ya?ml$/i.test(file) ? parseYaml(readFileSync(file, 'utf8')) : JSON.parse(readFileSync(file, 'utf8'))
-import { flatten } from './translate.js'
+import { flatten, MAX_DEPTH } from './translate.js'
 import { lockId, lockFinding } from './locks.js'
 import { reviewTranslations } from './review.js'
 
@@ -193,8 +193,10 @@ function lockFindings(locks, lang, ns, sourceObj, targetObj) {
 }
 
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'))
-const countLeaves = (obj) =>
-  Object.values(obj).reduce((n, v) => n + (v && typeof v === 'object' ? countLeaves(v) : 1), 0)
+const countLeaves = (obj, depth = 0) => {
+  if (depth > MAX_DEPTH) throw new Error(`locale nesting too deep (exceeds ${MAX_DEPTH} levels)`)
+  return Object.values(obj).reduce((n, v) => n + (v && typeof v === 'object' ? countLeaves(v, depth + 1) : 1), 0)
+}
 
 /* ------------------------------------------------------------------ modes */
 
