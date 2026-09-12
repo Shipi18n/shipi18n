@@ -29,11 +29,11 @@
     "directory": "packages/github-action"
   },
   "dependencies": {
-    "@actions/core": "^1.10.1",
+    "@actions/core": "^1.11.1",
     "@actions/exec": "^1.1.1",
-    "@actions/github": "^6.0.0",
-    "@shipi18n/core": "workspace:^",
+    "@actions/github": "^6.0.1",
     "@anthropic-ai/sdk": "^0.114.0",
+    "@shipi18n/core": "workspace:^",
     "openai": "^4.0.0"
   },
   "devDependencies": {

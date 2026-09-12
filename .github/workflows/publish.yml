@@ -59,10 +59,13 @@ jobs:
           cache: pnpm
 
       # Trusted publishing needs npm >= 11.5.1; Node 22 ships an older npm.
+      # Pinned (not @latest) so a publish can't pull a re-published/compromised
+      # npm release out from under us; bump deliberately. The floor assertion
+      # below stays as a safety net.
       - name: Upgrade npm and assert it is new enough
         run: |
           set -euo pipefail
-          npm install -g npm@latest
+          npm install -g npm@12.0.2
           echo "node $(node -v) / npm $(npm -v) / pnpm $(pnpm -v)"
           NPM_V="$(npm -v)" node -e '
             const [maj, min, pat] = process.env.NPM_V.split(".").map(Number)

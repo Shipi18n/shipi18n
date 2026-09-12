@@ -8,9 +8,12 @@
 #
 # Optional env for the translate tools only (validators never use them):
 #   -e ANTHROPIC_API_KEY=...   or   -e OPENAI_API_KEY=...
-FROM node:22-alpine
+# Base pinned by digest (not just the floating :22-alpine tag) so the build is
+# reproducible and can't silently pull a re-tagged image. Digest is for
+# node:22-alpine; bump both together when refreshing.
+FROM node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32
 
-RUN npm install -g @shipi18n/mcp@2.1.0 \
+RUN npm install -g @shipi18n/mcp@2.2.0 \
   && npm cache clean --force
 
 # stdio transport — the MCP client speaks over stdin/stdout.
