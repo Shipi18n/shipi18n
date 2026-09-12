@@ -7,3 +7,10 @@ demo/
 .env.*
 !.env.example
 .npmrc
+
+# Semantic-judge verdict cache: a per-machine cost optimization, NOT a trust
+# record. A committed cache can be forged to mark a bad translation "clean" and
+# skip the judge, so it must never be committed. (locks.json in the same dir IS
+# meant to be committed — the record of human-approved locks — so ignore only
+# the cache file, not the .shipi18n/ directory.)
+.shipi18n/semantic-cache.json

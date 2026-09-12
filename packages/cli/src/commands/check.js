@@ -68,7 +68,7 @@ export function checkCommand(program) {
       'OpenAI-compatible endpoint for the judge (Ollama, Gemini compat, ...). Needs -p openai; makes the key optional'
     )
     .option('--semantic-passes <n>', 'Judge passes for the majority vote', (v) => parseInt(v, 10), 3)
-    .option('--semantic-cache <file>', 'Verdict cache path', '.shipi18n/semantic-cache.json')
+    .option('--semantic-cache <file>', 'Verdict cache path (per-machine cost cache; gitignore it — a committed cache is untrusted)', '.shipi18n/semantic-cache.json')
     .option('--locks <file>', 'Manual-translation lock file', DEFAULT_LOCKS_PATH)
     .option('--no-locks', 'Ignore manual-translation locks')
     .action(async (input = './locales', opts) => {
