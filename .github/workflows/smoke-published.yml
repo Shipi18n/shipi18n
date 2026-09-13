@@ -54,6 +54,51 @@ jobs:
           npx shipi18n check ./locales -s en -r sarif -o out.sarif || true
           grep -q 'docs/rules/placeholder-missing' out.sarif || { echo 'SARIF missing per-rule helpUri'; exit 1; }
 
+      - name: CLI --baseline suppresses the backlog but still catches NEW findings (2.10.0)
+        run: |
+          cd /tmp/clean && mkdir -p bl/en bl/es
+          echo '{"a":"Hi {{name}}","b":"Bye"}' > bl/en/app.json
+          echo '{"a":"Hola"}'                   > bl/es/app.json   # missing b, dropped {{name}}
+          npx shipi18n check ./bl -s en --baseline base.json --write-baseline
+          test -f base.json || { echo "baseline not written"; exit 1; }
+          npx shipi18n check ./bl -s en --baseline base.json || { echo "baselined run should pass"; exit 1; }
+          echo '{"c":"Hi {{x}}"}' > bl/en/new.json; echo '{"c":"Hola"}' > bl/es/new.json
+          set +e; npx shipi18n check ./bl -s en --baseline base.json; code=$?; set -e
+          test "$code" = "1" || { echo "baseline missed a NEW finding (got $code)"; exit 1; }
+
+      - name: CLI --severity off silences a rule (2.10.0)
+        run: |
+          cd /tmp/clean && rm -f bl/en/new.json bl/es/new.json
+          npx shipi18n check ./bl -s en --severity 'missing-key=off,placeholder-missing=off' \
+            || { echo "severity=off should pass"; exit 1; }
+
+      - name: CLI --detect-secrets flags a leaked key and fails (2.11.0)
+        run: |
+          cd /tmp/clean && mkdir -p sec/en sec/es
+          echo '{"n":"Set token"}' > sec/en/app.json
+          echo '{"n":"Usa sk-ant-api03-abcdefghijklmnop1234567890"}' > sec/es/app.json
+          set +e; out=$(npx shipi18n check ./sec -s en --detect-secrets 2>&1); code=$?; set -e
+          echo "$out" | grep -q 'secret-detected' || { echo "secret not detected"; echo "$out"; exit 1; }
+          test "$code" = "1" || { echo "detect-secrets should fail the build (got $code)"; exit 1; }
+
+      - name: CLI wp-sync catches JED drift from the .po (2.11.0)
+        run: |
+          cd /tmp/clean && mkdir -p wp
+          printf 'msgid ""\nmsgstr ""\n\nmsgid "Save"\nmsgstr "Guardar"\n' > wp/es.po
+          node -e 'require("fs").writeFileSync("wp/app-es.json", JSON.stringify({domain:"messages",locale_data:{messages:{"":{lang:"es"},Save:["Guardar VIEJO"]}}}))'
+          set +e; out=$(npx shipi18n wp-sync wp/es.po 2>&1); code=$?; set -e
+          echo "$out" | grep -q 'jed-drift' || { echo "wp-sync missed drift"; echo "$out"; exit 1; }
+          test "$code" = "1" || { echo "wp-sync should exit 1 on drift (got $code)"; exit 1; }
+
+      - name: CLI flags an unescaped Android apostrophe (2.11.0)
+        run: |
+          cd /tmp/clean && mkdir -p and/values and/values-fr
+          printf '<resources><string name="greet">Welcome</string></resources>' > and/values/strings.xml
+          printf "<resources><string name=\"greet\">C'est parti</string></resources>" > and/values-fr/strings.xml
+          set +e; out=$(npx shipi18n check ./and -s en 2>&1); code=$?; set -e
+          echo "$out" | grep -q 'android-unescaped-apostrophe' || { echo "apostrophe not flagged"; echo "$out"; exit 1; }
+          test "$code" = "1" || { echo "android escaping should fail (got $code)"; exit 1; }
+
       - name: MCP server answers initialize + tools/list over stdio (all 8 tools)
         run: |
           cd /tmp/clean
