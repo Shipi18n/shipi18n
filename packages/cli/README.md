@@ -104,11 +104,34 @@ plurals · empty values · untranslated copy · stale `.xcstrings` states.
 | `-r, --reporter <name>` | `human` | `human` \| `json` \| `sarif` \| `junit` |
 | `-o, --output <file>` | stdout | Write the report to a file |
 | `--ignore-keys <globs>` | — | Silence keys: `'*.copyright,home:mcp.badge'` |
+| `--severity <spec>` | — | Per-rule level override: `'untranslated=off,placeholder-added=error'` |
+| `--baseline <file>` | — | Fail only on findings NOT already in the baseline |
+| `--write-baseline` | — | Snapshot current findings into `--baseline` (default `.shipi18n/baseline.json`) and exit |
 | `--fail-on <level>` | `error` | `error` \| `warning` \| `none` |
 | `--min-coverage <pct>` | — | Fail any language below this coverage |
 
 Exit codes: `0` pass, `1` findings at the fail level, `2` usage error. Errors may fail CI; warnings
 never do by default — a warning that blocks PRs gets the tool uninstalled.
+
+### Adopting on a messy catalog — baseline & severity
+
+A linter that fails on 2,000 pre-existing findings gets uninstalled by lunch. Baseline first, then
+fail only on what's **new** — the Stylelint/RuboCop pattern:
+
+```bash
+# 1. Snapshot today's findings (commit the file).
+npx @shipi18n/cli check ./locales --baseline .shipi18n/baseline.json --write-baseline
+
+# 2. CI from now on fails only on NEW findings; the backlog is accepted.
+npx @shipi18n/cli check ./locales --baseline .shipi18n/baseline.json
+```
+
+The baseline keys each finding on `(language, namespace, key path, rule)` — not the message text, so
+rewording a message never invalidates it. A missing baseline file is a cold start (warn + report all),
+not an error. Burn the backlog down by re-running `--write-baseline` whenever it shrinks.
+
+`--severity` tunes or silences a rule everywhere: `error`, `warning`, `info` (reported, never fails),
+or `off` (dropped entirely). Example: `--severity 'untranslated=off,empty-value=warning'`.
 
 ### GitHub Actions with PR annotations
 

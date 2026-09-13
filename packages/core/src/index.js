@@ -28,3 +28,6 @@ export { anthropicAdapter, openaiAdapter, resolveAdapter } from './adapters/inde
 // so the GitHub Action can run `check` without depending on the CLI. The CLI
 // re-exports these names for compatibility.
 export { humanReport, jsonReport, sarifReport, junitReport, REPORTERS, RULE_META, verdict } from './reporters.js'
+// Adoption hardening (2.10.0): baseline ("fail only on new"), per-rule severity,
+// suppression. Applied after the check and before `verdict`.
+export { applyPolicy, buildBaseline, findingFingerprint, parseSeverity, SEVERITY_LEVELS } from './policy.js'

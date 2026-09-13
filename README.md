@@ -93,6 +93,8 @@ Plus the parts that make it usable day to day:
 
 - **Formats beyond JSON.** YAML (`.yaml`/`.yml`), Flutter `.arb`, Apple `.xcstrings`, Android `strings.xml`, gettext `.po`/`.pot`, and XLIFF 1.2/2.0 — including `%@`/`%lld` specifiers.
 - **CI-native.** Correct exit codes, `--fail-on`, `--min-coverage`, SARIF for PR annotations, JUnit.
+- **Adopts on a messy catalog.** `--baseline` accepts today's backlog and fails only on *new* findings
+  (the Stylelint/RuboCop pattern); `--severity` tunes or silences any rule (`error|warning|info|off`).
 - **Hand-edits are protected.** `shipi18n lock` records the translations a human blessed and warns
   when anything overwrites them, or when the source moves underneath them.
 - **Keyless from your editor.** The MCP server's validators call no model at all.

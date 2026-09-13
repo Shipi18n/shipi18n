@@ -24,6 +24,9 @@ import {
   aggregateLanguage,
   SEP,
   verdict,
+  applyPolicy,
+  buildBaseline,
+  parseSeverity,
 } from '@shipi18n/core'
 import { REPORTERS } from '../reporters.js'
 import { locksFor, DEFAULT_LOCKS_PATH } from './lock.js'
@@ -56,6 +59,9 @@ export function checkCommand(program) {
     .option('-o, --output <file>', 'Write the report to a file instead of stdout')
     .option('--json', 'Shorthand for --reporter json')
     .option('--ignore-keys <patterns>', "Comma-separated '*' globs of keys to silence (path or ns:path)")
+    .option('--severity <spec>', "Per-rule severity overrides, e.g. 'untranslated=off,placeholder-added=error' (error|warning|info|off)")
+    .option('--baseline <file>', 'Baseline file: findings already recorded in it do not fail the build (only NEW ones do)')
+    .option('--write-baseline', 'Snapshot current findings into --baseline (default .shipi18n/baseline.json) and exit')
     .option('--fail-on <level>', 'Exit non-zero on: error | warning | none', 'error')
     .option('--min-coverage <pct>', 'Fail any language below this coverage percentage', parseFloat)
     .option('--glossary <file>', 'Glossary JSON: DNT terms + locked per-language translations (deterministic)')
@@ -148,6 +154,62 @@ export function checkCommand(program) {
           process.exitCode = 2
           return
         }
+      }
+
+      const DEFAULT_BASELINE = '.shipi18n/baseline.json'
+
+      // --write-baseline: snapshot every current finding and exit 0. Run after
+      // the (optional) semantic pass so a baseline can capture judge findings too.
+      if (opts.writeBaseline) {
+        const file = resolve(opts.baseline || DEFAULT_BASELINE)
+        const bl = buildBaseline(result)
+        try {
+          mkdirSync(dirname(file), { recursive: true })
+          writeFileSync(file, JSON.stringify(bl, null, 2) + '\n')
+        } catch (err) {
+          console.error(chalk.red(`Error: cannot write baseline ${file}: ${err.message}`))
+          process.exitCode = 2
+          return
+        }
+        console.error(chalk.gray(`baseline: recorded ${bl.count} finding(s) → ${opts.baseline || DEFAULT_BASELINE}`))
+        return
+      }
+
+      let severityMap
+      if (opts.severity) {
+        try {
+          severityMap = parseSeverity(opts.severity)
+        } catch (err) {
+          console.error(chalk.red(`Error: ${err.message}`))
+          process.exitCode = 2
+          return
+        }
+      }
+
+      let baseline
+      if (opts.baseline) {
+        const file = resolve(opts.baseline)
+        if (existsSync(file)) {
+          try {
+            baseline = JSON.parse(readFileSync(file, 'utf8'))
+          } catch (err) {
+            console.error(chalk.red(`Error: cannot read baseline ${opts.baseline}: ${err.message}`))
+            process.exitCode = 2
+            return
+          }
+        } else {
+          // A missing baseline is a cold start, not an error: nothing is suppressed
+          // and the run reports every finding. Hint how to create one.
+          console.error(chalk.yellow(`note: baseline ${opts.baseline} not found — reporting all findings. Create it with --write-baseline.`))
+        }
+      }
+
+      if (severityMap || baseline) {
+        const suppressed = applyPolicy(result, { severity: severityMap, baseline })
+        const parts = []
+        if (suppressed.suppressedByBaseline) parts.push(`${suppressed.suppressedByBaseline} baselined`)
+        if (suppressed.suppressedBySeverity) parts.push(`${suppressed.suppressedBySeverity} silenced (severity=off)`)
+        if (parts.length) console.error(chalk.gray(`policy: ${parts.join(', ')}`))
       }
 
       const verdictResult = verdict(result, { failOn: opts.failOn, minCoverage: opts.minCoverage })
