@@ -1,0 +1,76 @@
+# Build and push the CHECK CLI Docker image to GitHub Container Registry on each
+# v* tag. Kept SEPARATE from publish.yml on purpose: that workflow is locked down
+# for npm OIDC trusted publishing, and we don't want Docker steps sharing its
+# id-token scope. This one needs only the built-in GITHUB_TOKEN (packages:write),
+# so there is no user secret to configure.
+#
+# First release only: the new ghcr.io/shipi18n/cli package is created private.
+# Make it public once in the org's Packages settings so `docker run` needs no auth.
+name: docker
+on:
+  push:
+    tags: ['v*'] # same trigger as the npm publish; both fire off one tag
+  workflow_dispatch: # allow a manual rebuild without a new tag
+
+permissions:
+  contents: read
+  packages: write # push to GHCR with the built-in token
+
+jobs:
+  cli-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Derive the bare version (v2.10.0 -> 2.10.0) for the build-arg + tags.
+      # On workflow_dispatch there is no tag; fall back to the CLI's package.json.
+      - name: Resolve version
+        id: v
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            ver="${GITHUB_REF_NAME#v}"
+          else
+            ver="$(node -p "require('./packages/cli/package.json').version")"
+          fi
+          echo "version=${ver}" >> "$GITHUB_OUTPUT"
+          echo "major=${ver%%.*}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.cli
+          push: true
+          build-args: |
+            CLI_VERSION=${{ steps.v.outputs.version }}
+          tags: |
+            ghcr.io/shipi18n/cli:${{ steps.v.outputs.version }}
+            ghcr.io/shipi18n/cli:${{ steps.v.outputs.major }}
+            ghcr.io/shipi18n/cli:latest
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=${{ steps.v.outputs.version }}
+            org.opencontainers.image.description=Shipi18n i18n check CLI — lint locale files in any CI, no Node required
+
+      # Prove the freshly-pushed image actually runs the linter before we call it done.
+      - name: Smoke-test the pushed image
+        run: |
+          mkdir -p locales/en locales/es
+          printf '{"greeting":"Hi {name}"}' > locales/en/app.json
+          printf '{"greeting":"Hola"}'      > locales/es/app.json   # drops {name}
+          set +e
+          docker run --rm -v "$PWD:/work" \
+            ghcr.io/shipi18n/cli:${{ steps.v.outputs.version }} check ./locales -s en
+          code=$?
+          set -e
+          # A dropped placeholder must exit non-zero; anything else means the image is broken.
+          [ "$code" = "1" ] || { echo "expected exit 1, got $code"; exit 1; }
+          echo "image smoke test passed (exit $code as expected)"

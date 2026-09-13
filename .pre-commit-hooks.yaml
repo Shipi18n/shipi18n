@@ -1,0 +1,29 @@
+# pre-commit hook definitions. Lets any repo lint its locale catalogs on commit
+# with no Node toolchain — pre-commit runs the published Docker image. Add to a
+# consumer's .pre-commit-config.yaml:
+#
+#   repos:
+#     - repo: https://github.com/Shipi18n/shipi18n
+#       rev: v2.10.0          # pins the hook AND the image tag below — reproducible
+#       hooks:
+#         - id: shipi18n-check
+#           # override the defaults if your catalogs aren't in ./locales:
+#           # args: ['check', './i18n', '-s', 'en']
+#
+# The image tag is pinned to this release; it is bumped with every tag so a given
+# `rev:` always resolves to a matching image. Requires Docker on the dev machine
+# (that's the Node-free tradeoff). Node users who'd rather skip Docker can use a
+# repo-local hook instead — see the CLI README "pre-commit" section.
+- id: shipi18n-check
+  name: shipi18n — validate i18n catalogs
+  description: >-
+    Lint locale files for missing keys, dropped placeholders, and collapsed
+    plurals. No API key, no Node — runs the published check image.
+  language: docker_image
+  entry: ghcr.io/shipi18n/cli:2.10.0
+  args: ['check']
+  # check scans the locale tree itself; don't append changed filenames to it.
+  pass_filenames: false
+  # Only run when something catalog-shaped is staged (json/yaml/arb/xcstrings/
+  # gettext/xliff/android). Consumers can narrow this to e.g. ^locales/.
+  files: '\.(json|ya?ml|arb|xcstrings|po|pot|xlf|xliff|xml)$'

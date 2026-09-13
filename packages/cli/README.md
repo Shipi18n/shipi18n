@@ -146,6 +146,68 @@ or `off` (dropped entirely). Example: `--severity 'untranslated=off,empty-value=
     sarif_file: i18n.sarif
 ```
 
+### No Node? Run the check in any CI with Docker
+
+GitHub runners already have Node — the [Action](https://github.com/Shipi18n/shipi18n-github-action) is
+the easiest path there. Everywhere else (GitLab, Bitbucket, Jenkins, CircleCI, or local), the published
+image runs the linter with **no Node toolchain** — built for the PHP / Python / Ruby shops the
+`.po` / XLIFF / Android formats unlocked:
+
+```bash
+docker run --rm -v "$PWD:/work" ghcr.io/shipi18n/cli:latest check ./locales -s en
+```
+
+The check needs no API key. All CLI flags work — `--baseline .shipi18n/baseline.json`, `--reporter sarif`,
+etc. (`--write-baseline` writes back into the mounted repo). Pass `-e ANTHROPIC_API_KEY=...` only if you
+add `--semantic`.
+
+**GitLab CI** (`.gitlab-ci.yml`):
+
+```yaml
+i18n-check:
+  image: ghcr.io/shipi18n/cli:latest
+  script: [shipi18n check ./locales -s en]
+```
+
+**Bitbucket Pipelines** (`bitbucket-pipelines.yml`):
+
+```yaml
+pipelines:
+  default:
+    - step:
+        image: ghcr.io/shipi18n/cli:latest
+        script: [shipi18n check ./locales -s en]
+```
+
+### pre-commit
+
+Catch a dropped placeholder before it's even committed. Add to `.pre-commit-config.yaml` — pre-commit
+runs the Docker image, so **no Node is required**:
+
+```yaml
+repos:
+  - repo: https://github.com/Shipi18n/shipi18n
+    rev: v2.10.0
+    hooks:
+      - id: shipi18n-check
+        # args: ['check', './i18n', '-s', 'en']   # if not ./locales
+```
+
+Node users who prefer to skip Docker can use a repo-local hook instead:
+
+```yaml
+repos:
+  - repo: local
+    hooks:
+      - id: shipi18n-check
+        name: shipi18n check
+        language: node
+        additional_dependencies: ['@shipi18n/cli@2.10.0']
+        entry: shipi18n check ./locales -s en
+        pass_filenames: false
+        files: '\.(json|ya?ml|po|xlf|xliff|xml|arb|xcstrings)$'
+```
+
 ## Semantic QA — `--semantic` (the judge)
 
 The structural check cannot see a translation that is *fluent but wrong*. `--semantic` adds an
