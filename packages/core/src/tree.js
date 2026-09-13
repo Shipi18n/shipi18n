@@ -17,6 +17,7 @@ import { parseXcstrings } from './formats/xcstrings.js'
 import { parseAndroidStrings, androidLangFromValuesDir } from './formats/android.js'
 import { parsePo } from './formats/po.js'
 import { parseXliff } from './formats/xliff.js'
+import { scanSecrets } from './secrets.js'
 
 // Locale files are JSON or YAML. The check logic is format-agnostic once the
 // file is parsed to an object, so support is entirely a parse + discovery
@@ -508,7 +509,7 @@ export function runCheck({ input, source = 'en', ignoreKeys, glossary, locks } =
  */
 
 export async function runSemantic(result, { provider, apiKey, model, baseURL, passes, glossary, cache, fail = false }) {
-  const totals = { judged: 0, cached: 0, flagged: 0, calls: 0, parseFailures: 0, excluded: 0 }
+  const totals = { judged: 0, cached: 0, flagged: 0, calls: 0, parseFailures: 0, excluded: 0, redacted: 0 }
 
   for (const l of result.languages) {
     const pairs = result.semanticPairs?.[l.lang]
@@ -526,31 +527,50 @@ export async function runSemantic(result, { provider, apiKey, model, baseURL, pa
         totals.excluded++
         continue
       }
+      // Privacy pre-flight: never transmit a pair carrying a secret/PII to the
+      // LLM. Withhold it (fail-closed) and record a finding instead of sending.
+      const leaks = [...scanSecrets(pairs.source[key]), ...scanSecrets(pairs.target[key])]
+      if (leaks.length) {
+        totals.redacted++
+        const sepAt = key.indexOf(SEP)
+        const nsEntry = l.namespaces.find((n) => n.ns === key.slice(0, sepAt))
+        if (nsEntry) {
+          nsEntry.findings.push({
+            type: 'secret-preflight',
+            severity: leaks.some((h) => h.severity === 'error') ? 'error' : 'warning',
+            path: key.slice(sepAt + 1),
+            message: `withheld from the LLM — detected ${[...new Set(leaks.map((h) => h.kind))].join(', ')}`,
+          })
+        }
+        continue
+      }
       src[key] = pairs.source[key]
       tgt[key] = pairs.target[key]
     }
-    if (!Object.keys(src).length) continue
-
-    const { findings, stats } = await reviewTranslations({
-      source: src, target: tgt, from: result.source, to: l.lang,
-      provider, apiKey, model, baseURL, passes, glossary, cache,
-    })
-    for (const k of Object.keys(stats)) totals[k] = (totals[k] ?? 0) + (stats[k] ?? 0)
-
-    for (const f of findings) {
-      const sepAt = f.path.indexOf(SEP)
-      const ns = f.path.slice(0, sepAt)
-      const path = f.path.slice(sepAt + 1)
-      const nsEntry = l.namespaces.find((n) => n.ns === ns)
-      if (!nsEntry) continue
-      nsEntry.findings.push({
-        type: `semantic-${f.category}`,
-        severity: fail ? 'error' : 'warning',
-        path,
-        message: f.note || f.category,
-        source: f.source,
-        translation: f.translation,
+    // Even when nothing is left to send (all pairs excluded or withheld), the
+    // pre-flight may have added secret findings, so still recompute stats below.
+    if (Object.keys(src).length) {
+      const { findings, stats } = await reviewTranslations({
+        source: src, target: tgt, from: result.source, to: l.lang,
+        provider, apiKey, model, baseURL, passes, glossary, cache,
       })
+      for (const k of Object.keys(stats)) totals[k] = (totals[k] ?? 0) + (stats[k] ?? 0)
+
+      for (const f of findings) {
+        const sepAt = f.path.indexOf(SEP)
+        const ns = f.path.slice(0, sepAt)
+        const path = f.path.slice(sepAt + 1)
+        const nsEntry = l.namespaces.find((n) => n.ns === ns)
+        if (!nsEntry) continue
+        nsEntry.findings.push({
+          type: `semantic-${f.category}`,
+          severity: fail ? 'error' : 'warning',
+          path,
+          message: f.note || f.category,
+          source: f.source,
+          translation: f.translation,
+        })
+      }
     }
     for (const n of l.namespaces) n.stats = statsFrom(n.findings, n.stats.sourceKeys, n.stats.targetKeys)
     const re = aggregateLanguage(l.lang, l.namespaces)
@@ -558,5 +578,37 @@ export async function runSemantic(result, { provider, apiKey, model, baseURL, pa
   }
   recomputeTotals(result)
   return totals
+}
+
+/**
+ * Opt-in standalone scan: flag secrets/PII sitting in the locale strings
+ * themselves (a leak regardless of any LLM). Walks the same string set the
+ * semantic pass would send, attaches `secret-detected` findings, recomputes
+ * stats/totals, and returns the number of strings flagged.
+ */
+export function scanResultSecrets(result) {
+  let flagged = 0
+  for (const l of result.languages) {
+    const pairs = result.semanticPairs?.[l.lang]
+    if (!pairs) continue
+    for (const key of Object.keys(pairs.target || {})) {
+      const hits = [...scanSecrets(pairs.source?.[key]), ...scanSecrets(pairs.target[key])]
+      if (!hits.length) continue
+      flagged++
+      const sepAt = key.indexOf(SEP)
+      const nsEntry = l.namespaces.find((n) => n.ns === key.slice(0, sepAt))
+      if (!nsEntry) continue
+      nsEntry.findings.push({
+        type: 'secret-detected',
+        severity: hits.some((h) => h.severity === 'error') ? 'error' : 'warning',
+        path: key.slice(sepAt + 1),
+        message: `possible secret/PII in a locale string: ${[...new Set(hits.map((h) => h.kind))].join(', ')}`,
+      })
+    }
+    for (const n of l.namespaces) n.stats = statsFrom(n.findings, n.stats.sourceKeys, n.stats.targetKeys)
+    l.stats = aggregateLanguage(l.lang, l.namespaces).stats
+  }
+  recomputeTotals(result)
+  return flagged
 }
 

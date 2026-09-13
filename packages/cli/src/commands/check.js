@@ -27,6 +27,7 @@ import {
   applyPolicy,
   buildBaseline,
   parseSeverity,
+  scanResultSecrets,
 } from '@shipi18n/core'
 import { REPORTERS } from '../reporters.js'
 import { locksFor, DEFAULT_LOCKS_PATH } from './lock.js'
@@ -64,6 +65,7 @@ export function checkCommand(program) {
     .option('--write-baseline', 'Snapshot current findings into --baseline (default .shipi18n/baseline.json) and exit')
     .option('--fail-on <level>', 'Exit non-zero on: error | warning | none', 'error')
     .option('--min-coverage <pct>', 'Fail any language below this coverage percentage', parseFloat)
+    .option('--detect-secrets', 'Flag secrets/PII (API keys, private keys, emails, cards) sitting in locale strings')
     .option('--glossary <file>', 'Glossary JSON: DNT terms + locked per-language translations (deterministic)')
     .option('--semantic', 'Add the LLM-as-judge pass (BYO key; advisory warnings by default)')
     .option('--semantic-fail', 'Escalate semantic findings to errors (opt-in)')
@@ -105,6 +107,11 @@ export function checkCommand(program) {
         return
       }
 
+      if (opts.detectSecrets) {
+        const flagged = scanResultSecrets(result)
+        if (flagged) console.error(chalk.gray(`secrets: ${flagged} locale string(s) flagged for possible secrets/PII`))
+      }
+
       if (opts.semantic) {
         const cachePath = resolve(opts.semanticCache)
         let cache = {}
@@ -136,7 +143,8 @@ export function checkCommand(program) {
           console.error(
             chalk.gray(
               `semantic: judged ${judge.judged} (${judge.cached} cached), flagged ${judge.flagged}, ` +
-                `${judge.calls} model call(s), ${judge.parseFailures} discarded pass(es)`
+                `${judge.calls} model call(s), ${judge.parseFailures} discarded pass(es)` +
+                (judge.redacted ? `, ${judge.redacted} withheld (secrets/PII)` : '')
             )
           )
           // "judged 0" on a badly broken tree is correct but reads as a broken

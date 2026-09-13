@@ -107,6 +107,7 @@ plurals · empty values · untranslated copy · stale `.xcstrings` states.
 | `--severity <spec>` | — | Per-rule level override: `'untranslated=off,placeholder-added=error'` |
 | `--baseline <file>` | — | Fail only on findings NOT already in the baseline |
 | `--write-baseline` | — | Snapshot current findings into `--baseline` (default `.shipi18n/baseline.json`) and exit |
+| `--detect-secrets` | — | Flag secrets/PII (API keys, private keys, emails, cards) in locale strings |
 | `--fail-on <level>` | `error` | `error` \| `warning` \| `none` |
 | `--min-coverage <pct>` | — | Fail any language below this coverage |
 
@@ -240,6 +241,25 @@ LLM-as-judge pass with your own key:
 npx @shipi18n/cli check ./locales -s en --semantic          # advisory: warnings only
 npx @shipi18n/cli check ./locales -s en --semantic --glossary glossary.json
 ```
+
+### Privacy — secret & PII pre-flight
+
+`--semantic` sends your source/translation pairs to a third-party model. A **pre-flight runs
+automatically** and *withholds* any pair containing an API key, private key, JWT, credit-card number,
+email, or phone — it is never transmitted (fail-closed), and a `secret-preflight` finding is recorded
+instead. Because the judge only ever sends what the pre-flight scans, nothing with a detected secret
+leaves your machine.
+
+You can also run the scan on its own, no LLM involved, to catch secrets that shouldn't be sitting in
+locale strings at all:
+
+```bash
+npx @shipi18n/cli check ./locales -s en --detect-secrets
+```
+
+High-confidence secrets (keys, cards via Luhn) are errors; emails/phones are warnings. Detection is
+precision-biased — known key prefixes, example/test emails ignored, phones need a `+` country code —
+and matches are always masked, never echoed. Tune per rule with `--severity secret-detected=off`.
 
 **Honest limitations, up front:** the judge is probabilistic. Every key is judged across 3 passes
 and flagged only on a majority vote, unparseable passes are discarded, and semantic findings are

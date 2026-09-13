@@ -100,6 +100,8 @@ Plus the parts that make it usable day to day:
   — no Node toolchain required. See the [CLI README](packages/cli/README.md#no-node-run-the-check-in-any-ci-with-docker).
 - **WordPress `.po` ↔ JED sync.** `shipi18n wp-sync` catches JS translation JSON that has drifted from
   the `.po` because nobody re-ran `wp i18n make-json` — a silent bug no other tool checks.
+- **Privacy pre-flight.** Before `--semantic` sends anything to an LLM, a scan withholds any string
+  carrying a secret or PII (keys, cards, emails); `--detect-secrets` runs it standalone with no LLM.
 - **Hand-edits are protected.** `shipi18n lock` records the translations a human blessed and warns
   when anything overwrites them, or when the source moves underneath them.
 - **Keyless from your editor.** The MCP server's validators call no model at all.
