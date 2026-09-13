@@ -61,6 +61,43 @@ function icuArgNames(str) {
 }
 
 /**
+ * Remove balanced ICU argument blocks — `{count, plural, one {…} other {…}}`,
+ * `{gender, select, …}` — from a string. Their sub-message text is wrapped in
+ * braces as ICU syntax, not placeholders, so `{count, plural, one {element}…}`
+ * must not read `{element}` as an invented placeholder. The argument name itself
+ * is recovered separately via icuArgNames, so nothing is lost. (Rare real
+ * placeholders NESTED inside a sub-message are dropped too — a safe under-report,
+ * never a false alarm; ICU-source strings are validated by the ICU checker.)
+ */
+const ICU_ARG_AT =
+  /^\{\s*[a-zA-Z0-9_]+\s*,\s*(?:plural|selectordinal|select|number|date|time|spellout|ordinal|duration)\b/
+
+function stripIcuArgBlocks(str) {
+  if (typeof str !== 'string') return ''
+  let out = ''
+  for (let i = 0; i < str.length; ) {
+    if (str[i] === '{' && ICU_ARG_AT.test(str.slice(i))) {
+      // walk to the brace that closes this block
+      let depth = 0
+      let j = i
+      for (; j < str.length; j++) {
+        if (str[j] === '{') depth++
+        else if (str[j] === '}' && --depth === 0) {
+          j++
+          break
+        }
+      }
+      out += ' '
+      i = j
+    } else {
+      out += str[i]
+      i++
+    }
+  }
+  return out
+}
+
+/**
  * Does the translation preserve exactly the placeholders of the source?
  * A source `{x}` is considered present when the translation uses `x` as an ICU
  * argument (`{x, plural|select|…}`) and vice-versa — upgrading a plain variable
@@ -70,12 +107,19 @@ function icuArgNames(str) {
  * @returns {{ ok: boolean, missing: string[], added: string[] }}
  */
 export function validatePlaceholders(source, translation) {
-  const src = extractPlaceholders(source)
-  const out = extractPlaceholders(translation)
-  const outCounts = tally(out)
-  const srcCounts = tally(src)
+  // An empty source string defines no placeholders — nothing to preserve or
+  // violate. Key-as-source formats (gettext-JSON / Jed) put the English in the
+  // key and leave the base value empty; without this, every placeholder in a
+  // translation would read as "added".
+  if (typeof source !== 'string' || source.trim() === '') return { ok: true, missing: [], added: [] }
   const srcIcu = icuArgNames(source)
   const outIcu = icuArgNames(translation)
+  // Extract from ICU-stripped copies so plural/select sub-message text is not
+  // mistaken for placeholders; the argument names are recovered via *Icu above.
+  const src = extractPlaceholders(stripIcuArgBlocks(source))
+  const out = extractPlaceholders(stripIcuArgBlocks(translation))
+  const outCounts = tally(out)
+  const srcCounts = tally(src)
   const missing = []
   const added = []
   for (const [ph, n] of Object.entries(srcCounts)) {

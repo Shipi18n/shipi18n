@@ -48,6 +48,29 @@ describe('validatePlaceholders: ICU-argument reconciliation (real-world FP)', ()
     expect(r.added).toContain('{{mix}}')
   })
 
+  // FP #2a (found in Immich da.json): source is plain {count}, the translation
+  // upgrades to an ICU plural whose sub-messages are literal words in braces.
+  test('ICU plural sub-message text is not read as an added placeholder', () => {
+    const r = validatePlaceholders(
+      '{count} assets before {date}',
+      '{count, plural, one {element} other {elementer}} oprettet før {date}'
+    )
+    expect(r.ok).toBe(true) // {date} preserved, {count} reconciled, {element}/{elementer} ignored
+  })
+
+  test('but a real placeholder alongside an ICU plural still validates', () => {
+    // {date} genuinely dropped while count is pluralised → still flagged
+    const r = validatePlaceholders('{count} before {date}', '{count, plural, one {x} other {y}} luego')
+    expect(r.missing).toContain('{date}')
+  })
+
+  // FP #2b (found in Joplin, gettext-JSON/Jed): the source value is empty (the
+  // English lives in the key), so any placeholder in a translation looked "added".
+  test('an empty source string yields no placeholder findings', () => {
+    expect(validatePlaceholders('', 'GB %d مساحة').ok).toBe(true)
+    expect(validatePlaceholders('   ', 'has {count} things').ok).toBe(true)
+  })
+
   test('printf placeholders are unaffected by the ICU logic', () => {
     expect(validatePlaceholders('Loaded %d of %s', 'Cargados %d de %s').ok).toBe(true)
     expect(validatePlaceholders('Loaded %d of %s', 'Cargados %d').missing).toContain('%s')
