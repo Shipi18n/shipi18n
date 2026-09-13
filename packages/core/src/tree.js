@@ -14,7 +14,7 @@ import { checkTranslations } from './check.js'
 import { parse as parseYaml } from 'yaml'
 import { parseArbBundle } from './formats/arb.js'
 import { parseXcstrings } from './formats/xcstrings.js'
-import { parseAndroidStrings, androidLangFromValuesDir } from './formats/android.js'
+import { parseAndroidStrings, androidLangFromValuesDir, androidEscapingFindings } from './formats/android.js'
 import { parsePo } from './formats/po.js'
 import { parseXliff } from './formats/xliff.js'
 import { scanSecrets } from './secrets.js'
@@ -317,15 +317,19 @@ export function androidStringsMode({ input, source, isIgnored, glossary }) {
     const file = join(dir, d, 'strings.xml')
     const ns = 'strings'
     let data
+    let rawXml
     try {
-      data = parseAndroidStrings(readTextCapped(file))
+      rawXml = readTextCapped(file)
+      data = parseAndroidStrings(rawXml)
     } catch (err) {
       // A malformed/malicious target (bad XML, external entities, …) is a finding, not a crash.
       const findings = [{ type: 'invalid-file', severity: 'error', path: ns, message: `could not parse ${rel(file)}: ${err.message}` }]
       languages.push(aggregateLanguage(lang, [{ ns, file: rel(file), findings, stats: statsFrom(findings, 0, 0) }]))
       continue
     }
-    const { findings, stats } = checkTranslations({ source: sourceData, target: data, targetLang: lang, glossary })
+    const { findings: engineFindings, stats } = checkTranslations({ source: sourceData, target: data, targetLang: lang, glossary })
+    // Escaping errors AAPT would throw but the decoded values can't reveal.
+    const findings = [...engineFindings, ...androidEscapingFindings(rawXml)]
     const kept = findings.filter((f) => !isIgnored(ns, f.path))
     addPairs(perLang, lang, ns, sourceData, data, isIgnored)
     languages.push(

@@ -96,7 +96,8 @@ directories, Apple String Catalogs (`shipi18n check Localizable.xcstrings`), And
 
 **What it catches:** missing and orphaned keys · dropped or invented placeholders (`{{name}}`,
 `{count}`, `%s`, `%1$s`, `%@`, `%lld`, `$t(...)`, `%{name}`, HTML tags) · collapsed vue-i18n pipe
-plurals · empty values · untranslated copy · stale `.xcstrings` states.
+plurals · empty values · untranslated copy · stale `.xcstrings` states · Android unescaped apostrophes
+and unbalanced quotes (the `values-fr/strings.xml` AAPT build breaker).
 
 | Flag | Default | Meaning |
 | --- | --- | --- |

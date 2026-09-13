@@ -68,6 +68,71 @@ const isUntranslatable = (el) => el['@_translatable'] === 'false' || el['@_trans
 const asArray = (v) => (Array.isArray(v) ? v : v == null ? [] : [v])
 
 /**
+ * AAPT string-escaping rules, applied to the RAW text (before backslash
+ * unescaping). An apostrophe outside a "…"-quoted span must be `\'`, and every
+ * `"` must be balanced or escaped `\"` — an unescaped apostrophe is the classic
+ * `values-fr/strings.xml` build breaker ("Apostrophe not preceded by \\").
+ * Returns a finding descriptor, or null if the string is clean.
+ */
+function androidEscapingProblem(raw) {
+  let inQuote = false
+  for (let i = 0; i < raw.length; i++) {
+    const c = raw[i]
+    if (c === '\\') {
+      i++ // the next char is escaped — skip it
+      continue
+    }
+    if (c === '"') {
+      inQuote = !inQuote
+      continue
+    }
+    if (c === "'" && !inQuote) {
+      return {
+        type: 'android-unescaped-apostrophe',
+        message: "unescaped apostrophe — Android needs \\' or a \"…\"-wrapped string (AAPT compile error)",
+      }
+    }
+  }
+  if (inQuote) {
+    return {
+      type: 'android-unbalanced-quote',
+      message: 'unbalanced double-quote — Android needs \\" for a literal quote (AAPT compile error)',
+    }
+  }
+  return null
+}
+
+/**
+ * Escaping findings for one strings.xml document — the errors AAPT would throw
+ * that the check engine can't see once the parser has decoded the values.
+ * Checked on the raw node text (backslashes/quotes intact). Untranslatable and
+ * unnamed entries are skipped, matching parseAndroidStrings.
+ * @param {string} xml
+ * @returns {Array<{type:string, severity:'error', path:string, message:string}>}
+ */
+export function androidEscapingFindings(xml) {
+  const res = parser.parse(xml)?.resources || {}
+  const findings = []
+  const check = (raw, path) => {
+    const p = androidEscapingProblem(String(raw))
+    if (p) findings.push({ type: p.type, severity: 'error', path, message: p.message })
+  }
+  for (const s of res.string || []) {
+    if (!s['@_name'] || isUntranslatable(s)) continue
+    check(nodeText(s), s['@_name'])
+  }
+  for (const p of res.plurals || []) {
+    if (!p['@_name'] || isUntranslatable(p)) continue
+    for (const it of asArray(p.item)) if (it['@_quantity']) check(nodeText(it), `${p['@_name']}[${it['@_quantity']}]`)
+  }
+  for (const a of res['string-array'] || []) {
+    if (!a['@_name'] || isUntranslatable(a)) continue
+    asArray(a.item).forEach((it, i) => check(nodeText(it), `${a['@_name']}[${i}]`))
+  }
+  return findings
+}
+
+/**
  * Parse a strings.xml document into a plain locale object.
  * @param {string} xml
  * @returns {Record<string, any>}
