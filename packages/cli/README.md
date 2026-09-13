@@ -91,7 +91,8 @@ npx @shipi18n/cli check ./locales --source en
 ```
 
 It detects both common layouts (`locales/en.json` and `locales/en/<ns>.json`), plus Flutter ARB
-directories and Apple String Catalogs (`shipi18n check Localizable.xcstrings`).
+directories, Apple String Catalogs (`shipi18n check Localizable.xcstrings`), Android `res/values-*/`
+`strings.xml` trees, gettext `.po`/`.pot`, and XLIFF (`.xlf`/`.xliff`, 1.2 and 2.0).
 
 **What it catches:** missing and orphaned keys · dropped or invented placeholders (`{{name}}`,
 `{count}`, `%s`, `%1$s`, `%@`, `%lld`, `$t(...)`, `%{name}`, HTML tags) · collapsed vue-i18n pipe

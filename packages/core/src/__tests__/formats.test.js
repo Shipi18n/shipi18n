@@ -1,6 +1,7 @@
 import { extractPlaceholders, validatePlaceholders } from '../placeholders.js'
 import { parseArbBundle, arbLangFromFilename, stripArbMetadata } from '../formats/arb.js'
 import { parseXcstrings } from '../formats/xcstrings.js'
+import { parseAndroidStrings, androidLangFromValuesDir } from '../formats/android.js'
 import { checkTranslations } from '../check.js'
 
 describe('Apple format specifiers (gate S4)', () => {
@@ -157,5 +158,64 @@ describe('xcstrings adapter (gate S6)', () => {
   test('intact plural variation produces no findings for shared categories', () => {
     const ru = checkTranslations({ source: parsed.source, target: parsed.languages.ru, targetLang: 'ru' })
     expect(ru.findings.filter((f) => f.path.startsWith('%lld files') && f.severity === 'error')).toHaveLength(0)
+  })
+})
+
+describe('Android strings.xml adapter', () => {
+  test('language from values-* directory names', () => {
+    expect(androidLangFromValuesDir('values')).toBeNull()
+    expect(androidLangFromValuesDir('values-es')).toBe('es')
+    expect(androidLangFromValuesDir('values-zh-rCN')).toBe('zh-CN')
+    expect(androidLangFromValuesDir('values-b+zh+Hans')).toBe('zh-Hans')
+    expect(androidLangFromValuesDir('values-land')).toBeNull()
+    expect(androidLangFromValuesDir('values-sw600dp')).toBeNull()
+  })
+
+  const en = parseAndroidStrings(`<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="hello">Hello %1$s</string>
+  <string name="bye">Goodbye</string>
+  <string name="brand" translatable="false">Shipi18n</string>
+  <string name="greet_g">Hi <xliff:g id="name">%1$s</xliff:g>!</string>
+  <plurals name="items">
+    <item quantity="one">%d item</item>
+    <item quantity="other">%d items</item>
+  </plurals>
+  <string-array name="days">
+    <item>Mon</item>
+    <item>Tue</item>
+  </string-array>
+</resources>`)
+
+  test('parses strings, plurals (nested), string-arrays; skips translatable=false', () => {
+    expect(en.hello).toBe('Hello %1$s')
+    expect(en.bye).toBe('Goodbye')
+    expect(en.brand).toBeUndefined() // translatable="false"
+    expect(en.items).toEqual({ one: '%d item', other: '%d items' })
+    expect(en.days).toEqual(['Mon', 'Tue'])
+  })
+
+  test('captures placeholder inside nested <xliff:g>', () => {
+    expect(en.greet_g).toContain('%1$s')
+  })
+
+  test('catches dropped placeholder, missing key, and missing plural form in a target', () => {
+    const es = parseAndroidStrings(`<resources>
+      <string name="hello">Hola</string>
+      <plurals name="items"><item quantity="other">%d artículos</item></plurals>
+      <string-array name="days"><item>Lun</item><item>Mar</item></string-array>
+    </resources>`)
+    const { findings } = checkTranslations({ source: en, target: es, targetLang: 'es' })
+    // hello dropped %1$s
+    expect(findings.some((f) => f.type === 'placeholder-missing' && f.path === 'hello')).toBe(true)
+    // bye and greet_g missing entirely
+    expect(findings.some((f) => f.type === 'missing-key' && f.path === 'bye')).toBe(true)
+    // items.one missing (plural form dropped)
+    expect(findings.some((f) => f.type === 'missing-key' && f.path === 'items.one')).toBe(true)
+  })
+
+  test('handles Android escapes and entities', () => {
+    const x = parseAndroidStrings(`<resources><string name="q">It\\'s 100%% &amp; done</string></resources>`)
+    expect(x.q).toBe("It's 100%% & done") // \' unescaped, &amp; decoded; %% left as-is (runtime printf concern)
   })
 })

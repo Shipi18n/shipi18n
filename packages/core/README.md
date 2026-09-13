@@ -102,9 +102,10 @@ semantic layer: an LLM-as-judge pass (BYO key) with majority voting across passe
 validation, and an incremental cache — unchanged pairs cost zero calls. Judge findings carry
 `{ path, category, note, votes, passes }`.
 
-Format adapters for mobile catalogs are exported too: `parseArbBundle` (Flutter ARB) and
-`parseXcstrings` (Apple String Catalogs) normalize those files into plain locale objects that
-`checkTranslations` understands — including `%@` / `%lld` specifiers and plural variations.
+Format adapters are exported too: `parseArbBundle` (Flutter ARB), `parseXcstrings` (Apple String
+Catalogs), `parseAndroidStrings` (Android `strings.xml`), `parsePo` (gettext `.po`/`.pot`) and
+`parseXliff` (XLIFF 1.2/2.0) normalize those files into plain locale objects that `checkTranslations`
+understands — including `%@` / `%lld` specifiers and plural variations.
 
 ## API
 

@@ -7,8 +7,9 @@
  * pipeline can gate on it.
  *
  * Formats: plain JSON locale trees (flat `locales/<lang>.json` or nested
- * `locales/<lang>/<ns>.json`), Flutter ARB directories, and Apple String
- * Catalogs (`.xcstrings`). Reporters: human, json, sarif, junit.
+ * `locales/<lang>/<ns>.json`), YAML, Flutter ARB directories, Apple String
+ * Catalogs (`.xcstrings`), Android `strings.xml` trees, gettext `.po`/`.pot`,
+ * and XLIFF (`.xlf`/`.xliff`, 1.2 & 2.0). Reporters: human, json, sarif, junit.
  */
 import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'node:fs'
 import { resolve, dirname, join } from 'node:path'

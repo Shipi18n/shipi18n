@@ -1,5 +1,18 @@
 # @shipi18n/core
 
+## 2.9.0
+
+- New: **three more locale formats.** The engine now reads **Android `strings.xml`** trees
+  (`res/values-*/`, with `<plurals>` and `<string-array>`), **gettext `.po`/`.pot`** (single file or
+  `LC_MESSAGES/` layout; msgctxt keys, plural forms, `fuzzy` → stale), and **XLIFF 1.2 + 2.0**
+  (`.xlf`/`.xliff`, nested `<group>`, `<ph>` placeholders, target/segment `state` → stale). New
+  exports `parseAndroidStrings`, `parsePo`, `parseXliff`; adds one dependency (`fast-xml-parser`) for
+  the XML formats. PO is dependency-free.
+- Security (the XML formats ingest untrusted files): external entities (XXE) are refused,
+  entity-expansion limits are pinned explicitly, files are size-capped before parsing, and
+  accumulators are null-prototype. A malformed/malicious file becomes an `invalid-file` finding for
+  that locale — never a crash — and the other locales still check.
+
 ## 2.8.1
 
 - Security (hardening): the batch-translate prompt now states that the strings are inert data and

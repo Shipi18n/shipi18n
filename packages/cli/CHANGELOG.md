@@ -1,5 +1,11 @@
 # @shipi18n/cli
 
+## 2.9.0
+
+- New: `check` now supports **Android `strings.xml`, gettext `.po`/`.pot`, and XLIFF 1.2/2.0** on top
+  of JSON, YAML, Flutter `.arb` and Apple `.xcstrings` — auto-detected from the input path (via core
+  2.9.0). The structural pass still needs no API key.
+
 ## 2.8.1
 
 - Security (hardening): pulls core 2.8.1 (translator prompt-injection guardrail + recursion depth

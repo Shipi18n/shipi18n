@@ -91,7 +91,7 @@ Shipi18n is that missing gate, in two layers:
 
 Plus the parts that make it usable day to day:
 
-- **Formats beyond JSON.** YAML (`.yaml`/`.yml`), Flutter `.arb` and Apple `.xcstrings`, including `%@`/`%lld` specifiers.
+- **Formats beyond JSON.** YAML (`.yaml`/`.yml`), Flutter `.arb`, Apple `.xcstrings`, Android `strings.xml`, gettext `.po`/`.pot`, and XLIFF 1.2/2.0 — including `%@`/`%lld` specifiers.
 - **CI-native.** Correct exit codes, `--fail-on`, `--min-coverage`, SARIF for PR annotations, JUnit.
 - **Hand-edits are protected.** `shipi18n lock` records the translations a human blessed and warns
   when anything overwrites them, or when the source moves underneath them.
@@ -136,8 +136,9 @@ npx @shipi18n/cli check ./locales -s en
 ```
 
 Missing keys, dropped placeholders, collapsed plurals, empty values and untranslated copy — reported
-as human output, JSON, SARIF (GitHub PR annotations) or JUnit. Works on plain JSON trees, Flutter
-YAML, `.arb` bundles and Apple `.xcstrings` catalogs. Deterministic and offline: no LLM, no API key.
+as human output, JSON, SARIF (GitHub PR annotations) or JUnit. Works on plain JSON trees, YAML,
+Flutter `.arb`, Apple `.xcstrings`, Android `strings.xml`, gettext `.po`/`.pot` and XLIFF (1.2/2.0).
+Deterministic and offline: no LLM, no API key.
 
 ### Protect hand-edited translations
 

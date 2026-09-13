@@ -1,5 +1,10 @@
 # @shipi18n/mcp
 
+## 2.3.0
+
+- New: the validator tools (`check_locales`, `diff_locales`, …) now handle **Android `strings.xml`,
+  gettext `.po`/`.pot`, and XLIFF 1.2/2.0** via core 2.9.0 — still zero model calls, no API key.
+
 ## 2.2.1
 
 - Security (hardening): pulls core 2.8.1, so `translate_json` / `translate_file` carry the

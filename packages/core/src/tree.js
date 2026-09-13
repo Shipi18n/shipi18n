@@ -14,6 +14,9 @@ import { checkTranslations } from './check.js'
 import { parse as parseYaml } from 'yaml'
 import { parseArbBundle } from './formats/arb.js'
 import { parseXcstrings } from './formats/xcstrings.js'
+import { parseAndroidStrings, androidLangFromValuesDir } from './formats/android.js'
+import { parsePo } from './formats/po.js'
+import { parseXliff } from './formats/xliff.js'
 
 // Locale files are JSON or YAML. The check logic is format-agnostic once the
 // file is parsed to an object, so support is entirely a parse + discovery
@@ -22,6 +25,16 @@ const LOCALE_EXT = /\.(json|ya?ml)$/i
 const stripExt = (name) => name.replace(LOCALE_EXT, '')
 const readData = (file) =>
   /\.ya?ml$/i.test(file) ? parseYaml(readFileSync(file, 'utf8')) : JSON.parse(readFileSync(file, 'utf8'))
+
+// Bound worst-case memory on untrusted locale files: a huge single text node or
+// attribute (or an enormous PO msgstr) that entity/nesting limits don't cover.
+// Real locale files are far smaller than 10 MB.
+const MAX_LOCALE_BYTES = 10 * 1024 * 1024
+const readTextCapped = (file) => {
+  const { size } = statSync(file)
+  if (size > MAX_LOCALE_BYTES) throw new Error(`file too large: ${size} bytes (limit ${MAX_LOCALE_BYTES})`)
+  return readFileSync(file, 'utf8')
+}
 import { flatten, MAX_DEPTH } from './translate.js'
 import { lockId, lockFinding } from './locks.js'
 import { reviewTranslations } from './review.js'
@@ -284,6 +297,139 @@ export function xcstringsMode({ input, source, isIgnored, glossary }) {
   return finishResult({ layout: 'xcstrings', dir: dirname(file), source: sourceLang, languages }, perLang)
 }
 
+export function androidStringsMode({ input, source, isIgnored, glossary }) {
+  const dir = resolve(input)
+  const valueDirs = readdirSync(dir).filter(
+    (d) => /^values(-.+)?$/.test(d) && existsSync(join(dir, d, 'strings.xml'))
+  )
+  if (!valueDirs.includes('values')) {
+    throw new Error(`no default values/strings.xml (source) found in ${input}`)
+  }
+  const sourceData = parseAndroidStrings(readTextCapped(join(dir, 'values', 'strings.xml')))
+
+  const perLang = {}
+  const languages = []
+  for (const d of valueDirs) {
+    if (d === 'values') continue
+    const lang = androidLangFromValuesDir(d)
+    if (!lang) continue // non-locale qualifier dir (values-land, values-sw600dp, ...)
+    const file = join(dir, d, 'strings.xml')
+    const ns = 'strings'
+    let data
+    try {
+      data = parseAndroidStrings(readTextCapped(file))
+    } catch (err) {
+      // A malformed/malicious target (bad XML, external entities, …) is a finding, not a crash.
+      const findings = [{ type: 'invalid-file', severity: 'error', path: ns, message: `could not parse ${rel(file)}: ${err.message}` }]
+      languages.push(aggregateLanguage(lang, [{ ns, file: rel(file), findings, stats: statsFrom(findings, 0, 0) }]))
+      continue
+    }
+    const { findings, stats } = checkTranslations({ source: sourceData, target: data, targetLang: lang, glossary })
+    const kept = findings.filter((f) => !isIgnored(ns, f.path))
+    addPairs(perLang, lang, ns, sourceData, data, isIgnored)
+    languages.push(
+      aggregateLanguage(lang, [
+        { ns, file: rel(file), findings: kept, stats: statsFrom(kept, stats.sourceKeys, stats.targetKeys) },
+      ])
+    )
+  }
+  return finishResult({ layout: 'android', dir, source, languages }, perLang)
+}
+
+const collectPoFiles = (dir, depth = 0, out = []) => {
+  if (depth > 3) return out
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    if (e.name.startsWith('.')) continue
+    const full = join(dir, e.name)
+    if (e.isDirectory()) collectPoFiles(full, depth + 1, out)
+    else if (/\.pot?$/i.test(e.name)) out.push(full)
+  }
+  return out
+}
+
+// Language from a gettext path: `<lang>/LC_MESSAGES/domain.po` → `<lang>`, else the filename stem.
+const poLangFromPath = (file) => {
+  const parts = file.split(/[/\\]/)
+  const lc = parts.lastIndexOf('LC_MESSAGES')
+  if (lc > 0) return parts[lc - 1].replace(/_/g, '-')
+  return basename(file).replace(/\.pot?$/i, '').replace(/_/g, '-')
+}
+
+export function poMode({ input, source, isIgnored, glossary }) {
+  const path = resolve(input)
+  const asFile = statSync(path).isFile()
+  // Directory mode: real translations only (.po); skip .pot templates (all-empty by design).
+  const files = asFile ? [path] : collectPoFiles(path).filter((f) => /\.po$/i.test(f))
+  const dir = asFile ? dirname(path) : path
+
+  const perLang = {}
+  const byLang = {}
+  for (const file of files) {
+    const ns = basename(file).replace(/\.pot?$/i, '')
+    let parsed
+    try {
+      parsed = parsePo(readTextCapped(file))
+    } catch (err) {
+      const lang = poLangFromPath(file)
+      const findings = [{ type: 'invalid-file', severity: 'error', path: ns, message: `could not parse ${rel(file)}: ${err.message}` }]
+      ;(byLang[lang] = byLang[lang] || []).push({ ns, file: rel(file), findings, stats: statsFrom(findings, 0, 0) })
+      continue
+    }
+    const lang = parsed.language || poLangFromPath(file)
+    if (!asFile && lang === source) continue // the source-language catalog isn't a target
+    const { findings, stats } = checkTranslations({ source: parsed.source, target: parsed.target, targetLang: lang, glossary })
+    addPairs(perLang, lang, ns, parsed.source, parsed.target, isIgnored)
+    const kept = [...findings, ...parsed.findings].filter((f) => !isIgnored(ns, f.path))
+    ;(byLang[lang] = byLang[lang] || []).push({
+      ns,
+      file: rel(file),
+      findings: kept,
+      stats: statsFrom(kept, stats.sourceKeys, stats.targetKeys),
+    })
+  }
+  const languages = Object.entries(byLang).map(([lang, nss]) => aggregateLanguage(lang, nss))
+  return finishResult({ layout: 'po', dir, source, languages }, perLang)
+}
+
+const XLIFF_EXT = /\.(xlf|xliff)$/i
+
+export function xliffMode({ input, source, isIgnored, glossary }) {
+  const path = resolve(input)
+  const asFile = statSync(path).isFile()
+  const files = asFile
+    ? [path]
+    : readdirSync(path).filter((f) => XLIFF_EXT.test(f)).map((f) => join(path, f))
+  const dir = asFile ? dirname(path) : path
+
+  const perLang = {}
+  const byLang = {}
+  for (const file of files) {
+    const ns = basename(file).replace(XLIFF_EXT, '')
+    let parsed
+    try {
+      parsed = parseXliff(readTextCapped(file))
+    } catch (err) {
+      const lang = basename(file).replace(XLIFF_EXT, '').replace(/_/g, '-')
+      const findings = [{ type: 'invalid-file', severity: 'error', path: ns, message: `could not parse ${rel(file)}: ${err.message}` }]
+      ;(byLang[lang] = byLang[lang] || []).push({ ns, file: rel(file), findings, stats: statsFrom(findings, 0, 0) })
+      continue
+    }
+    const lang = parsed.trgLang || basename(file).replace(XLIFF_EXT, '').replace(/_/g, '-')
+    if (!asFile && lang === source) continue // source-language catalog isn't a target
+    const { findings, stats } = checkTranslations({ source: parsed.source, target: parsed.target, targetLang: lang, glossary })
+    addPairs(perLang, lang, ns, parsed.source, parsed.target, isIgnored)
+    const kept = [...findings, ...parsed.findings].filter((f) => !isIgnored(ns, f.path))
+    ;(byLang[lang] = byLang[lang] || []).push({
+      ns,
+      file: rel(file),
+      findings: kept,
+      stats: statsFrom(kept, stats.sourceKeys, stats.targetKeys),
+    })
+  }
+  const languages = Object.entries(byLang).map(([lang, nss]) => aggregateLanguage(lang, nss))
+  return finishResult({ layout: 'xliff', dir, source, languages }, perLang)
+}
+
 export function aggregateLanguage(lang, namespaces) {
   const agg = namespaces.reduce(
     (a, n) => ({
@@ -321,8 +467,27 @@ export function runCheck({ input, source = 'en', ignoreKeys, glossary, locks } =
   if (existsSync(path) && statSync(path).isFile() && path.endsWith('.xcstrings')) {
     return xcstringsMode({ input, source, isIgnored, glossary })
   }
+  if (existsSync(path) && statSync(path).isFile() && /\.pot?$/i.test(path)) {
+    return poMode({ input, source, isIgnored, glossary })
+  }
+  if (existsSync(path) && statSync(path).isFile() && XLIFF_EXT.test(path)) {
+    return xliffMode({ input, source, isIgnored, glossary })
+  }
   if (existsSync(path) && statSync(path).isDirectory() && readdirSync(path).some((f) => f.endsWith('.arb'))) {
     return arbMode({ input, source, isIgnored, glossary })
+  }
+  if (
+    existsSync(path) &&
+    statSync(path).isDirectory() &&
+    readdirSync(path).some((d) => /^values(-.+)?$/.test(d) && existsSync(join(path, d, 'strings.xml')))
+  ) {
+    return androidStringsMode({ input, source, isIgnored, glossary })
+  }
+  if (existsSync(path) && statSync(path).isDirectory() && collectPoFiles(path).some((f) => /\.po$/i.test(f))) {
+    return poMode({ input, source, isIgnored, glossary })
+  }
+  if (existsSync(path) && statSync(path).isDirectory() && readdirSync(path).some((f) => XLIFF_EXT.test(f))) {
+    return xliffMode({ input, source, isIgnored, glossary })
   }
   return jsonMode({ input, source, isIgnored, glossary, locks })
 }
