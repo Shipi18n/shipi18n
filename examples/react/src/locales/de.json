@@ -1,0 +1,27 @@
+{
+  "app": {
+    "title": "Projekt-Dashboard",
+    "tagline": "Zur Build-Zeit mit Ihrem eigenen LLM übersetzt"
+  },
+  "nav": {
+    "overview": "Übersicht",
+    "projects": "Projekte",
+    "settings": "Einstellungen"
+  },
+  "dashboard": {
+    "greeting": "Willkommen zurück, {{name}}!",
+    "items_one": "Sie haben {{count}} offene Aufgabe",
+    "items_other": "Sie haben {{count}} offene Aufgaben",
+    "lastLogin": "Zuletzt angemeldet am {{date}}",
+    "progress": "%d von %s Projekten geladen"
+  },
+  "actions": {
+    "save": "Änderungen speichern",
+    "cancel": "Abbrechen",
+    "delete": "Projekt löschen",
+    "confirmDelete": "Sind Sie sicher? Dies kann nicht rückgängig gemacht werden."
+  },
+  "legal": {
+    "terms": "Ich stimme den <1>Nutzungsbedingungen</1> zu"
+  }
+}

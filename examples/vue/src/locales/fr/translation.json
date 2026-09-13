@@ -1,0 +1,29 @@
+{
+  "app": {
+    "title": "Exemple Vue Shipi18n",
+    "description": "Fichiers de langue traduits à la compilation avec votre propre LLM"
+  },
+  "nav": {
+    "home": "Accueil",
+    "about": "À propos",
+    "settings": "Paramètres",
+    "language": "Langue"
+  },
+  "greeting": "Bonjour, {name} !",
+  "items": "Vous avez {count} élément | Vous avez {count} éléments",
+  "messages": {
+    "welcome": "Bienvenue dans notre application",
+    "goodbye": "Au revoir et à bientôt"
+  },
+  "buttons": {
+    "submit": "Envoyer",
+    "cancel": "Annuler",
+    "save": "Enregistrer les modifications"
+  },
+  "errors": {
+    "required": "Ce champ est obligatoire",
+    "invalid_email": "Veuillez saisir une adresse e-mail valide",
+    "network": "Erreur réseau. Veuillez réessayer."
+  },
+  "footer": "Cette application n'embarque aucune clé API — la traduction s'effectue lors de la compilation Vite."
+}

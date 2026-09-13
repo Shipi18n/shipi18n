@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "title": "Shipi18n Next.js Example",
+    "description": "Locale files translated at build time with your own LLM key"
+  },
+  "home": {
+    "heading": "Project Dashboard",
+    "tagline": "Server-rendered in {{language}}, translated before the build",
+    "greeting": "Welcome back, {{name}}!",
+    "tasks_one": "You have {{count}} open task",
+    "tasks_other": "You have {{count}} open tasks",
+    "lastSync": "Last synced {{time}}"
+  },
+  "actions": {
+    "save": "Save changes",
+    "cancel": "Cancel"
+  },
+  "footer": {
+    "note": "This page ships no API key. Translation happens in the build step.",
+    "repo": "View the source on GitHub"
+  }
+}

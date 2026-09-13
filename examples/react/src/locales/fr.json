@@ -1,0 +1,27 @@
+{
+  "app": {
+    "title": "Tableau de bord du projet",
+    "tagline": "Traduit au moment de la compilation avec votre propre LLM"
+  },
+  "nav": {
+    "overview": "Aperçu",
+    "projects": "Projets",
+    "settings": "Paramètres"
+  },
+  "dashboard": {
+    "greeting": "Bon retour, {{name}} !",
+    "items_one": "Vous avez {{count}} tâche en cours",
+    "items_other": "Vous avez {{count}} tâches en cours",
+    "lastLogin": "Dernière connexion le {{date}}",
+    "progress": "%d projets sur %s chargés"
+  },
+  "actions": {
+    "save": "Enregistrer les modifications",
+    "cancel": "Annuler",
+    "delete": "Supprimer le projet",
+    "confirmDelete": "Êtes-vous sûr ? Cette action est irréversible."
+  },
+  "legal": {
+    "terms": "J'accepte les <1>Conditions d'utilisation</1>"
+  }
+}

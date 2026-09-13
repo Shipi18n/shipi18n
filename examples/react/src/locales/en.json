@@ -1,0 +1,27 @@
+{
+  "app": {
+    "title": "Project Dashboard",
+    "tagline": "Translated at build time with your own LLM"
+  },
+  "nav": {
+    "overview": "Overview",
+    "projects": "Projects",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "greeting": "Welcome back, {{name}}!",
+    "items_one": "You have {{count}} open task",
+    "items_other": "You have {{count}} open tasks",
+    "lastLogin": "Last signed in on {{date}}",
+    "progress": "Loaded %d of %s projects"
+  },
+  "actions": {
+    "save": "Save changes",
+    "cancel": "Cancel",
+    "delete": "Delete project",
+    "confirmDelete": "Are you sure? This cannot be undone."
+  },
+  "legal": {
+    "terms": "I agree to the <1>Terms of Service</1>"
+  }
+}

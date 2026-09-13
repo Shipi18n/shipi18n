@@ -1,0 +1,52 @@
+:root {
+  --bg: #f7f8fa;
+  --card: #ffffff;
+  --ink: #111827;
+  --muted: #6b7280;
+  --line: #e5e7eb;
+  --accent: #2563eb;
+  --danger: #dc2626;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--ink);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); }
+
+.app { max-width: 44rem; margin: 0 auto; padding: 2rem 1rem 4rem; }
+
+.header h1 { margin: 0 0 .25rem; font-size: 1.9rem; }
+.header p { margin: 0 0 1rem; color: var(--muted); }
+
+.switcher { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 2rem; }
+.switcher button {
+  padding: .4rem .8rem; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--card); color: var(--ink); cursor: pointer; font: inherit; font-size: .875rem;
+}
+.switcher button:hover { border-color: var(--accent); }
+.switcher button.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+.card {
+  background: var(--card); border: 1px solid var(--line); border-radius: .75rem;
+  padding: 1.5rem; margin-bottom: 1.5rem;
+}
+.card h2 { margin: 0 0 1rem; font-size: 1.25rem; }
+.card p { margin: .35rem 0; }
+
+.muted { color: var(--muted); font-size: .9rem; }
+/* Code is always LTR, even when the page is not. */
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .875rem; direction: ltr; unicode-bidi: isolate; }
+
+.actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.25rem; }
+.actions button {
+  padding: .5rem 1rem; border: 1px solid var(--line); border-radius: .5rem;
+  background: var(--card); color: var(--ink); cursor: pointer; font: inherit;
+}
+.actions button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.actions button.danger { color: var(--danger); border-color: var(--danger); }
+
+.nav { display: flex; gap: 1.5rem; color: var(--muted); font-size: .9rem; margin-bottom: 2rem; }
+
+.footer { border-top: 1px solid var(--line); padding-top: 1rem; color: var(--muted); font-size: .875rem; }
+.footer code { background: #eef0f3; padding: .1rem .35rem; border-radius: .25rem; direction: ltr; unicode-bidi: isolate; }
+.footer a { color: var(--accent); }

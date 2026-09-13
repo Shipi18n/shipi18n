@@ -194,6 +194,12 @@ const { result, stats } = await translateJSON({
 Structure-preserving, placeholder-safe and incremental — only new or changed keys are sent to the
 model. Then check the result with the same tool.
 
+## Examples
+
+Runnable projects in [`examples/`](./examples) — [react](./examples/react) (Vite + react-i18next),
+[nextjs](./examples/nextjs) (App Router), [vue](./examples/vue) (vue-i18n), and
+[nodejs](./examples/nodejs) (`@shipi18n/core`). `cd` into one, install, and run its check/translate scripts.
+
 ## Development
 
 This is a pnpm + turbo monorepo.

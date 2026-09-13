@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "title": "Shipi18n Next.js-Beispiel",
+    "description": "Sprachdateien werden zur Buildzeit mit deinem eigenen LLM-Schlüssel übersetzt"
+  },
+  "home": {
+    "heading": "Projekt-Dashboard",
+    "tagline": "Serverseitig in {{language}} gerendert, vor dem Build übersetzt",
+    "greeting": "Willkommen zurück, {{name}}!",
+    "tasks_one": "Du hast {{count}} offene Aufgabe",
+    "tasks_other": "Du hast {{count}} offene Aufgaben",
+    "lastSync": "Zuletzt synchronisiert {{time}}"
+  },
+  "actions": {
+    "save": "Änderungen speichern",
+    "cancel": "Abbrechen"
+  },
+  "footer": {
+    "note": "Diese Seite enthält keinen API-Schlüssel. Die Übersetzung erfolgt im Build-Schritt.",
+    "repo": "Quellcode auf GitHub ansehen"
+  }
+}

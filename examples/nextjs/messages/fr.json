@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "title": "Exemple Shipi18n Next.js",
+    "description": "Fichiers de langue traduits à la compilation avec votre propre clé LLM"
+  },
+  "home": {
+    "heading": "Tableau de bord du projet",
+    "tagline": "Rendu côté serveur en {{language}}, traduit avant la compilation",
+    "greeting": "Bon retour, {{name}} !",
+    "tasks_one": "Vous avez {{count}} tâche en cours",
+    "tasks_other": "Vous avez {{count}} tâches en cours",
+    "lastSync": "Dernière synchronisation {{time}}"
+  },
+  "actions": {
+    "save": "Enregistrer les modifications",
+    "cancel": "Annuler"
+  },
+  "footer": {
+    "note": "Cette page n'inclut aucune clé API. La traduction se fait à l'étape de compilation.",
+    "repo": "Voir le code source sur GitHub"
+  }
+}

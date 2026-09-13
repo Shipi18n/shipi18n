@@ -1,0 +1,20 @@
+{
+  "welcome": "Welcome to our app!",
+  "greeting": "Hello, {{name}}!",
+  "messages": {
+    "count": "You have {{count}} new messages",
+    "empty": "No messages",
+    "single": "You have 1 message"
+  },
+  "actions": {
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "save": "Save changes"
+  },
+  "errors": {
+    "required": "This field is required",
+    "invalid_email": "Please enter a valid email address",
+    "network": "Network error. Please try again."
+  }
+}

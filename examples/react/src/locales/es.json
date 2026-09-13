@@ -1,0 +1,27 @@
+{
+  "app": {
+    "title": "Panel del proyecto",
+    "tagline": "Traducido en tiempo de compilación con tu propio LLM"
+  },
+  "nav": {
+    "overview": "Resumen",
+    "projects": "Proyectos",
+    "settings": "Configuración"
+  },
+  "dashboard": {
+    "greeting": "¡Bienvenido de nuevo, {{name}}!",
+    "items_one": "Tienes {{count}} tarea pendiente",
+    "items_other": "Tienes {{count}} tareas pendientes",
+    "lastLogin": "Último inicio de sesión el {{date}}",
+    "progress": "Se cargaron %d de %s proyectos"
+  },
+  "actions": {
+    "save": "Guardar cambios",
+    "cancel": "Cancelar",
+    "delete": "Eliminar proyecto",
+    "confirmDelete": "¿Estás seguro? Esto no se puede deshacer."
+  },
+  "legal": {
+    "terms": "Acepto los <1>Términos del servicio</1>"
+  }
+}

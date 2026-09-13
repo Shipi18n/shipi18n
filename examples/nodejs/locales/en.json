@@ -1,0 +1,30 @@
+{
+  "common": {
+    "welcome": "Welcome to our application",
+    "goodbye": "Goodbye, see you soon!",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Operation completed successfully"
+  },
+  "auth": {
+    "login": "Log in",
+    "logout": "Log out",
+    "signup": "Sign up",
+    "forgotPassword": "Forgot password?",
+    "emailPlaceholder": "Enter your email",
+    "passwordPlaceholder": "Enter your password"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "greeting": "Hello, {{name}}!",
+    "items_one": "You have {{count}} item",
+    "items_other": "You have {{count}} items",
+    "lastLogin": "Last login: {{date}}"
+  },
+  "errors": {
+    "notFound": "Page not found",
+    "unauthorized": "You are not authorized to view this page",
+    "serverError": "Something went wrong on our end",
+    "networkError": "Unable to connect to the server"
+  }
+}

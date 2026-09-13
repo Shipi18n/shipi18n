@@ -1,0 +1,29 @@
+{
+  "app": {
+    "title": "Ejemplo de Shipi18n para Vue",
+    "description": "Archivos de idioma traducidos en tiempo de compilación con tu propio LLM"
+  },
+  "nav": {
+    "home": "Inicio",
+    "about": "Acerca de",
+    "settings": "Ajustes",
+    "language": "Idioma"
+  },
+  "greeting": "¡Hola, {name}!",
+  "items": "Tienes {count} elemento | Tienes {count} elementos",
+  "messages": {
+    "welcome": "Bienvenido a nuestra aplicación",
+    "goodbye": "Adiós y hasta pronto"
+  },
+  "buttons": {
+    "submit": "Enviar",
+    "cancel": "Cancelar",
+    "save": "Guardar cambios"
+  },
+  "errors": {
+    "required": "Este campo es obligatorio",
+    "invalid_email": "Introduce una dirección de correo electrónico válida",
+    "network": "Error de red. Inténtalo de nuevo."
+  },
+  "footer": "Esta aplicación no incluye ninguna clave de API: la traducción se ejecuta en la compilación de Vite."
+}

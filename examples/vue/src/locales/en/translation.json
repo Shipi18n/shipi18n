@@ -1,0 +1,29 @@
+{
+  "app": {
+    "title": "Shipi18n Vue Example",
+    "description": "Locale files translated at build time with your own LLM"
+  },
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "settings": "Settings",
+    "language": "Language"
+  },
+  "greeting": "Hello, {name}!",
+  "items": "You have {count} item | You have {count} items",
+  "messages": {
+    "welcome": "Welcome to our application",
+    "goodbye": "Goodbye and see you soon"
+  },
+  "buttons": {
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "save": "Save Changes"
+  },
+  "errors": {
+    "required": "This field is required",
+    "invalid_email": "Please enter a valid email address",
+    "network": "Network error. Please try again."
+  },
+  "footer": "This app ships no API key — translation runs in the Vite build."
+}

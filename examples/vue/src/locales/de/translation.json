@@ -1,0 +1,29 @@
+{
+  "app": {
+    "title": "Shipi18n Vue-Beispiel",
+    "description": "Sprachdateien zur Build-Zeit mit Ihrem eigenen LLM übersetzt"
+  },
+  "nav": {
+    "home": "Startseite",
+    "about": "Über",
+    "settings": "Einstellungen",
+    "language": "Sprache"
+  },
+  "greeting": "Hallo, {name}!",
+  "items": "Sie haben {count} Element | Sie haben {count} Elemente",
+  "messages": {
+    "welcome": "Willkommen in unserer Anwendung",
+    "goodbye": "Auf Wiedersehen und bis bald"
+  },
+  "buttons": {
+    "submit": "Absenden",
+    "cancel": "Abbrechen",
+    "save": "Änderungen speichern"
+  },
+  "errors": {
+    "required": "Dieses Feld ist erforderlich",
+    "invalid_email": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+    "network": "Netzwerkfehler. Bitte versuchen Sie es erneut."
+  },
+  "footer": "Diese App enthält keinen API-Schlüssel – die Übersetzung erfolgt im Vite-Build."
+}

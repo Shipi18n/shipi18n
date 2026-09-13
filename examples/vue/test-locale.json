@@ -1,0 +1,33 @@
+{
+  "app": {
+    "title": "My Vue Application",
+    "description": "A sample application to test translations"
+  },
+  "nav": {
+    "home": "Home",
+    "about": "About Us",
+    "contact": "Contact",
+    "settings": "Settings"
+  },
+  "greeting": "Hello, {name}!",
+  "welcome_message": "Welcome back, {username}. You have {count} notifications.",
+  "buttons": {
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "save": "Save Changes",
+    "delete": "Delete"
+  },
+  "items_one": "{count} item in cart",
+  "items_other": "{count} items in cart",
+  "errors": {
+    "required": "This field is required",
+    "invalid_email": "Please enter a valid email address",
+    "min_length": "Must be at least {min} characters",
+    "network": "Network error. Please try again."
+  },
+  "footer": {
+    "copyright": "© 2025 My Company. All rights reserved.",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  }
+}
