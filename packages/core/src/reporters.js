@@ -76,6 +76,12 @@ export const RULE_META = {
   'semantic-mistranslation': 'LLM judge (majority vote): the translation states something different from the source.',
   'semantic-omission': 'LLM judge (majority vote): meaningful source content is missing from the translation.',
   'semantic-addition': 'LLM judge (majority vote): the translation contains claims the source does not make.',
+  'jed-drift': 'A WordPress JED .json string is out of sync with the .po (re-run wp i18n make-json).',
+  'jed-orphan': 'A WordPress JED .json carries a string the .po no longer has.',
+  'secret-detected': 'A locale string contains a secret or PII (API key, private key, card, email).',
+  'secret-preflight': 'A string was withheld from the LLM because it held a secret or PII.',
+  'android-unescaped-apostrophe': "An Android strings.xml apostrophe is not escaped (\\') or double-quote-wrapped.",
+  'android-unbalanced-quote': 'An Android strings.xml has an unbalanced or unescaped double-quote.',
 }
 
 /** SARIF 2.1.0 — one run, one rule per finding type, one result per finding. */
