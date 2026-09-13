@@ -14,7 +14,7 @@
  */
 import { extractPlaceholders } from '../placeholders.js'
 
-const CTXT_SEP = '\u0004'
+export const CTXT_SEP = '\u0004'
 
 /** Decode the C-style escapes gettext uses in quoted strings. */
 function unescapePo(s) {
@@ -33,13 +33,13 @@ function npluralsFromHeader(headerMsgstr) {
 }
 
 /**
- * Parse a .po/.pot document.
+ * Low-level: parse a .po/.pot into raw entries (msgid/msgctxt/msgstr/msgstrs/
+ * fuzzy), before any check semantics. Shared by parsePo and the WordPress JED
+ * sync check, which needs the plural msgstrs that parsePo folds away.
  * @param {string} text
- * @returns {{ language: string|null, nplurals: number|null,
- *             source: Record<string,string>, target: Record<string,string>,
- *             findings: Array<object> }}
+ * @returns {Array<{msgid?:string,msgctxt?:string,msgidPlural?:string,msgstr?:string,msgstrs?:string[],fuzzy?:boolean}>}
  */
-export function parsePo(text) {
+export function readPoEntries(text) {
   const lines = text.split(/\r?\n/)
   const entries = []
   let cur = null
@@ -94,7 +94,18 @@ export function parsePo(text) {
     }
   }
   flush()
+  return entries
+}
 
+/**
+ * Parse a .po/.pot document into source/target/findings for the check engine.
+ * @param {string} text
+ * @returns {{ language: string|null, nplurals: number|null,
+ *             source: Record<string,string>, target: Record<string,string>,
+ *             findings: Array<object> }}
+ */
+export function parsePo(text) {
+  const entries = readPoEntries(text)
   const source = Object.create(null) // null-proto: crafted keys can't pollute
   const target = Object.create(null)
   const findings = []

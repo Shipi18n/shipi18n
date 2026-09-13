@@ -187,7 +187,7 @@ runs the Docker image, so **no Node is required**:
 ```yaml
 repos:
   - repo: https://github.com/Shipi18n/shipi18n
-    rev: v2.10.0
+    rev: v2.11.0
     hooks:
       - id: shipi18n-check
         # args: ['check', './i18n', '-s', 'en']   # if not ./locales
@@ -202,11 +202,34 @@ repos:
       - id: shipi18n-check
         name: shipi18n check
         language: node
-        additional_dependencies: ['@shipi18n/cli@2.10.0']
+        additional_dependencies: ['@shipi18n/cli@2.11.0']
         entry: shipi18n check ./locales -s en
         pass_filenames: false
         files: '\.(json|ya?ml|po|xlf|xliff|xml|arb|xcstrings)$'
 ```
+
+## WordPress — `.po` ↔ JED `.json` sync (`wp-sync`)
+
+Since WP 5.0, JavaScript strings are translated from a JED-format JSON that `wp i18n make-json`
+**generates** from your `.po`. Edit the `.po`, forget to re-run make-json, and the PHP side shows the
+new translation while the JS side silently ships the stale one — and nothing in the WP toolchain
+flags it. `wp-sync` does:
+
+```bash
+# Auto-discovers the sibling *.json JED files next to the .po
+npx @shipi18n/cli wp-sync languages/plugin-es_ES.po
+
+# Or point at specific JED files / a directory
+npx @shipi18n/cli wp-sync languages/plugin-es_ES.po languages/build/*.json
+```
+
+It reports **`jed-drift`** (a JS translation that no longer matches the `.po` — re-run make-json) and
+**`jed-orphan`** (a JS string the `.po` dropped). A `.po`-only string is *not* flagged — the JED is a
+legitimate JS-only subset. Context and plural forms are compared independently.
+
+Shares the check flags: `--reporter json|sarif|junit` (SARIF gives PR annotations), `--baseline` /
+`--write-baseline` (fail only on new drift), `--severity` (e.g. `--severity 'jed-orphan=off'`),
+`--fail-on`. Exit `0` in sync, `1` drift/orphan, `2` no JED files found.
 
 ## Semantic QA — `--semantic` (the judge)
 

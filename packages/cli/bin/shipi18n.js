@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url'
 import { translateCommand } from '../src/commands/translate.js'
 import { checkCommand } from '../src/commands/check.js'
 import { lockCommand } from '../src/commands/lock.js'
+import { wpSyncCommand } from '../src/commands/wp-sync.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const pkg = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf8'))
@@ -37,5 +38,6 @@ ${chalk.gray('https://github.com/Shipi18n/shipi18n')}
 translateCommand(program)
 checkCommand(program)
 lockCommand(program)
+wpSyncCommand(program)
 program.parse(process.argv)
 if (!process.argv.slice(2).length) program.outputHelp()

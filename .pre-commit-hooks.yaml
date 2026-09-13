@@ -4,7 +4,7 @@
 #
 #   repos:
 #     - repo: https://github.com/Shipi18n/shipi18n
-#       rev: v2.10.0          # pins the hook AND the image tag below — reproducible
+#       rev: v2.11.0          # pins the hook AND the image tag below — reproducible
 #       hooks:
 #         - id: shipi18n-check
 #           # override the defaults if your catalogs aren't in ./locales:
@@ -20,7 +20,7 @@
     Lint locale files for missing keys, dropped placeholders, and collapsed
     plurals. No API key, no Node — runs the published check image.
   language: docker_image
-  entry: ghcr.io/shipi18n/cli:2.10.0
+  entry: ghcr.io/shipi18n/cli:2.11.0
   args: ['check']
   # check scans the locale tree itself; don't append changed filenames to it.
   pass_filenames: false
