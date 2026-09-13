@@ -189,7 +189,7 @@ runs the Docker image, so **no Node is required**:
 ```yaml
 repos:
   - repo: https://github.com/Shipi18n/shipi18n
-    rev: v2.11.0
+    rev: v2.11.1
     hooks:
       - id: shipi18n-check
         # args: ['check', './i18n', '-s', 'en']   # if not ./locales
@@ -204,7 +204,7 @@ repos:
       - id: shipi18n-check
         name: shipi18n check
         language: node
-        additional_dependencies: ['@shipi18n/cli@2.11.0']
+        additional_dependencies: ['@shipi18n/cli@2.11.1']
         entry: shipi18n check ./locales -s en
         pass_filenames: false
         files: '\.(json|ya?ml|po|xlf|xliff|xml|arb|xcstrings)$'
