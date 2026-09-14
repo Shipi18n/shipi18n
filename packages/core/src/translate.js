@@ -34,6 +34,9 @@ export const MAX_DEPTH = 100
  */
 export function flatten(obj, prefix = '', out = {}, depth = 0) {
   if (depth > MAX_DEPTH) throw new Error(`locale nesting too deep (exceeds ${MAX_DEPTH} levels)`)
+  // A locale file whose root is `null` (an empty Rails YAML after unwrap, a stub
+  // JSON) is an empty locale, not a crash (FP#4, found on Mastodon config/locales).
+  if (obj === null || obj === undefined) return out
   for (const [key, value] of Object.entries(obj)) {
     const path = prefix ? `${prefix}.${key}` : key
     if (value && typeof value === 'object' && !Array.isArray(value)) {

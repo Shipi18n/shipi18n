@@ -21,6 +21,12 @@ import { isICUControl, checkICU } from './icu.js'
 const pluralFormCount = (str) => String(str).split('|').length
 const looksLikePipePlural = (str) => pluralFormCount(str) > 1 && /\{[^}]+\}/.test(str)
 
+/** Rails/i18n-gem date & time format keys hold strftime patterns, not placeholders. */
+const isDateFormatKey = (path) => /(^|\.)(date|time)\.formats(\.|$)/.test(path)
+/** CLDR plural category keys whose form may legitimately omit the count. */
+const isCldrSingularKey = (path) => /(^|\.)(one|zero)$/.test(path)
+const isCountPlaceholder = (ph) => /^(\{\{?|%\{)(count|n|num|number)\}?\}$/.test(ph)
+
 /** Heuristic for "probably untranslated": multi-word and contains letters. */
 const looksTranslatable = (str) => /\s/.test(str.trim()) && /[a-zA-Z]/.test(str)
 
@@ -100,6 +106,17 @@ export function checkTranslations({ source, target, targetLang = 'target', gloss
     const s = src[path]
     const t = tgt[path]
 
+    // `null` is `typeof 'object'`, so a null translation of a string used to
+    // read as a type mismatch (FP#4: 8,000+ on Solidus bg.yml). It is an empty
+    // translation. A null SOURCE defines nothing to translate — pass through.
+    if (s === null || s === undefined) continue
+    if (t === null) {
+      if (typeof s === 'string' && s.trim() !== '') {
+        findings.push({ type: 'empty-value', severity: 'error', path, message: 'empty translation', source: s })
+      }
+      continue
+    }
+
     if (typeof s !== typeof t) {
       findings.push({
         type: 'type-mismatch',
@@ -126,15 +143,21 @@ export function checkTranslations({ source, target, targetLang = 'target', gloss
     // placeholder check would read its sub-messages as bogus placeholders.
     if (isICUControl(s)) {
       findings.push(...checkICU(s, t, targetLang, path))
+    } else if (isDateFormatKey(path)) {
+      // strftime patterns — Rails `time.formats.short: "%b %-d"` — aren't
+      // placeholders, and locales legitimately reorder/drop fields (FP#6).
     } else {
       const { missing, added } = validatePlaceholders(s, t)
       if (missing.length) {
+        // CLDR `one`/`zero` forms may omit the count by design ("one post" →
+        // "בהודעה אחת"). Not a hard error when the count is all that's missing (FP#7).
+        const soft = isCldrSingularKey(path) && missing.every(isCountPlaceholder)
         findings.push({
           type: 'placeholder-missing',
-          severity: 'error',
+          severity: soft ? 'warning' : 'error',
           path,
           missing,
-          message: `dropped ${missing.join(', ')}`,
+          message: `dropped ${missing.join(', ')}${soft ? ' (singular form — may be intentional)' : ''}`,
           source: s,
           translation: t,
         })
