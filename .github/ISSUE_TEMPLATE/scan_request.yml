@@ -1,0 +1,38 @@
+name: Scan my project's locales
+description: Ask us to run the placeholder/ICU/plural check on your open-source repo and send verified fixes upstream.
+title: "[scan] owner/repo"
+labels: ["scan-request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We scan public repos with `shipi18n check` (structural only, no LLM), verify every finding by hand against the
+        source language, and send fixes as one-file PRs — or as an issue if your translations live on Crowdin/Weblate.
+        Results appear on https://shipi18n.com/oss. You can also run it yourself: `npx @shipi18n/cli check ./locales`.
+  - type: input
+    id: repo
+    attributes:
+      label: Repository
+      placeholder: owner/repo
+    validations:
+      required: true
+  - type: input
+    id: path
+    attributes:
+      label: Locale directory (if you know it)
+      placeholder: e.g. src/locales, lib/l10n, config/locales, app/src/main/res
+  - type: dropdown
+    id: mgmt
+    attributes:
+      label: How are translations managed?
+      options:
+        - Edited directly in the repo (PRs welcome)
+        - Crowdin / Weblate / Transifex / other platform (please open an issue instead)
+        - Not sure
+  - type: checkboxes
+    id: ok
+    attributes:
+      label: Permission
+      options:
+        - label: I'm a maintainer/contributor of this repo, or it's clearly open to outside PRs
+          required: true
