@@ -1,5 +1,17 @@
 # @shipi18n/core
 
+## 2.11.3
+
+- Placeholder checking is now **format-aware**: one grammar per format (ICU/ARB, i18next, vue-i18n, Rails YAML,
+  gettext, Android, Apple) instead of one regex bag, with the interpolation style of JSON trees sniffed from the
+  source strings. Brace formats are read through the ICU parser, so arguments nested in plural/select options count.
+- Fixes eleven false-positive classes found scanning real repos: repeated placeholders in pipe-plurals, `%@ %@` vs
+  `%1$@ %2$@`, `{{ x }}` whitespace, `%{x}` inside ARB strings, vue-i18n `{'{'}` literals, null values/roots,
+  strftime keys, nested ICU args, and more. Every case is a fixture in `evals/placeholders/corpus.jsonl`.
+- **Rails YAML**: the root locale key (`en:` / `pt-BR:`) is unwrapped, so Rails trees compare key-for-key.
+- Warning tier (not error) for plural forms collapsed to one, English suffix variables (`{plural}`), and singular
+  forms that omit the count; a literal `{}` stays an error.
+
 ## 2.9.0
 
 - New: **three more locale formats.** The engine now reads **Android `strings.xml`** trees

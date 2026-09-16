@@ -1,5 +1,12 @@
 # @shipi18n/cli
 
+## 2.11.3
+
+- Pulls core 2.11.3: format-aware placeholder grammars, Rails YAML root-key unwrap, eleven false-positive
+  classes fixed, warning tier for plural simplifications.
+- New `--format <name>` flag to override the auto-detected placeholder grammar (`icu | i18next | vue | brace |
+  rails | gettext | android | apple | generic`).
+
 ## 2.9.0
 
 - New: `check` now supports **Android `strings.xml`, gettext `.po`/`.pot`, and XLIFF 1.2/2.0** on top
