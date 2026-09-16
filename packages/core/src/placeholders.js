@@ -1,44 +1,156 @@
 /**
- * Placeholder detection + validation.
+ * Placeholder detection + validation — FORMAT-AWARE.
  *
- * i18n strings embed placeholders that must survive translation byte-for-byte:
- *   - i18next / ICU:  {{name}}, {count}
- *   - printf:         %s, %d, %1$s
- *   - i18next nesting: $t(some.key)
- *   - React-intl:     {name}
- *   - Ruby / others:  %{name}
+ * i18n strings embed placeholders that must survive translation:
+ *   ICU / react-intl / ARB   {name}  {count, plural, …}  (nested args inside options)
+ *   i18next                  {{name}}  {{ name }}  {{count, number}}  $t(key)
+ *   vue-i18n                 {name}  {0}  and the literal escape {'{'}
+ *   Rails / Ruby             %{name}  %<name>s
+ *   gettext / Python         %s %d %1$s %(name)s {name} {0}
+ *   Android                  %1$s %s %d %.2f
+ *   Apple                    %@ %lld %1$@ %.2f
  *
- * The translation prompt instructs the model to preserve these; these helpers
- * VERIFY the model obeyed, so callers can retry or flag drift.
+ * One regex bag for every format was the root cause of most false positives
+ * found scanning real repos (a Ruby `%{x}` pattern eating a Turkish `%{percent}`
+ * inside an ARB file; `%@ %@` vs `%1$@ %2$@`; `{{ x }}` vs `{{x}}`). Each
+ * format now gets its own grammar; JSON trees are sniffed for i18next vs ICU
+ * vs vue-i18n. Unknown → `generic` (the old union) so nothing is missed.
+ *
+ * Identity model: a NAMED placeholder identifies a variable — repeats are one
+ * identity (set compare). A bare printf specifier identifies an argument SLOT
+ * by position; bare specifiers are numbered by appearance so `%@ %@` ≡
+ * `%1$@ %2$@`, while `%s %s` → `%s` still drops slot 2 and `%3$@` against a
+ * two-argument source is still an unexpected slot.
  */
+import { parse, TYPE } from '@formatjs/icu-messageformat-parser'
 
-const PLACEHOLDER_PATTERNS = [
-  /\{\{[^}]+\}\}/g, // {{name}}
-  /\$t\([^)]*\)/g, // $t(key)
-  /%\{[^}]+\}/g, // %{name}
-  /%\d+\$(?:@|l{1,2}[du]|[sdfx])/g, // %1$s %1$@ %2$lld  (positional, before bare forms)
-  /%l{1,2}[du]/g, // %lld %llu %ld %lu  (Apple/C long forms, before bare %d)
-  /%@/g, // %@  (Apple object specifier)
-  /%\.\d+f/g, // %.2f  (precision floats)
-  /%[sdfx]/g, // %s %d
-  /\{[a-zA-Z0-9_.]+\}/g, // {count} {name}  (after the {{ }} pass)
-]
-
-/**
- * Extract all placeholders from a string, in a stable, comparable multiset.
- * @param {string} str
- * @returns {string[]} sorted list of placeholder tokens (duplicates preserved)
- */
-export function extractPlaceholders(str) {
-  return extractOrdered(str).sort()
+/* ------------------------------------------------------------ patterns */
+const PAT = {
+  DOUBLE: /\{\{\s*[^{}]+?\s*\}\}/g, // {{name}} {{ name }} {{count, number}}
+  TFUNC: /\$t\([^)]*\)/g, // $t(key)
+  RUBY: /%\{[^}]+\}/g, // %{name}
+  RUBY_FMT: /%<[^>]+>[sdfi]/g, // %<name>s
+  PY_NAMED: /%\([^)]+\)[sdifr]/g, // %(name)s
+  POSITIONAL: /%\d+\$(?:@|l{1,2}[du]|[sdfx])/g, // %1$s %1$@ %2$lld
+  APPLE_LONG: /%l{1,2}[du]/g, // %lld %llu %ld %lu
+  APPLE_OBJ: /%@/g, // %@
+  PRINTF_PREC: /%\.\d+f/g, // %.2f
+  PRINTF: /%[sdfx]/g, // %s %d
+  BRACE: /\{[a-zA-Z0-9_.]+\}/g, // {name} {0}
 }
 
-/** Same, in document order — bare printf slots are numbered by appearance. */
-function extractOrdered(str) {
+/**
+ * Grammar per format. `ast` = try the ICU parser first (collects argument
+ * names recursively, so a `{total}` nested inside a plural option counts).
+ * `literal` = strip vue-i18n literal escapes `{'…'}` before the regex pass.
+ */
+export const FORMATS = {
+  icu: { patterns: [PAT.BRACE], ast: true, literal: false },
+  i18next: { patterns: [PAT.DOUBLE, PAT.TFUNC], ast: false, literal: false },
+  vue: { patterns: [PAT.BRACE, PAT.RUBY], ast: true, literal: true }, // vue-i18n also accepts legacy %{name}
+  brace: { patterns: [PAT.DOUBLE, PAT.TFUNC, PAT.BRACE], ast: true, literal: true }, // JSON, style unknown
+  rails: { patterns: [PAT.RUBY, PAT.RUBY_FMT], ast: false, literal: false },
+  gettext: { patterns: [PAT.PY_NAMED, PAT.POSITIONAL, PAT.PRINTF_PREC, PAT.PRINTF, PAT.BRACE], ast: false, literal: false },
+  android: { patterns: [PAT.POSITIONAL, PAT.PRINTF_PREC, PAT.PRINTF], ast: false, literal: false },
+  apple: { patterns: [PAT.POSITIONAL, PAT.APPLE_LONG, PAT.APPLE_OBJ, PAT.PRINTF_PREC, PAT.PRINTF], ast: false, literal: false },
+  generic: { patterns: Object.values(PAT), ast: true, literal: true },
+}
+
+/** A grammar may be a named format or an ad-hoc `{patterns, ast, literal}` object. */
+const grammarOf = (format) => (typeof format === 'string' ? FORMATS[format] || FORMATS.generic : format || FORMATS.generic)
+
+/**
+ * Sniff the interpolation style of a JSON/YAML locale tree from its SOURCE
+ * strings. Returns a format name for validatePlaceholders.
+ *   `{{` anywhere            → i18next
+ *   `%{`                     → rails
+ *   printf-ish `%s`/`%1$s`   → generic (brace + printf; some JSON apps use %s)
+ *   otherwise                → brace (ICU / react-intl / vue-i18n share {name})
+ */
+export function detectFormat(sourceValues, { ext = 'json', unwrappedRailsRoot = false } = {}) {
+  if (unwrappedRailsRoot) return 'rails'
+  const yaml = /ya?ml/i.test(ext)
+  let dbl = 0, ruby = 0, printf = 0, brace = 0, n = 0
+  for (const v of sourceValues) {
+    if (typeof v !== 'string') continue
+    n++
+    // `{{` inside ICU control messages (`other {{counter} people}`) is nesting, not i18next.
+    if (!ICU_CONTROL.test(v)) dbl += (v.match(I18NEXT_TOKEN) || []).length
+    ruby += (v.match(PAT.RUBY) || []).length
+    brace += (v.replace(PAT.RUBY, ' ').match(PAT.BRACE) || []).length // `%{x}` is not also `{x}`
+    printf += (v.match(/%(\d+\$)?[sd@]\b/g) || []).length
+  }
+  if (!n) return yaml ? 'rails' : 'brace'
+  if (dbl && dbl >= brace / 4) return 'i18next' // {{x}} present and not dwarfed by ICU {x}
+  if (ruby && yaml) return 'rails'
+  if (ruby && brace) return 'vue' // vue-i18n trees mix {x} with legacy %{x} (Chatwoot)
+  if (ruby) return 'rails'
+  if (printf && printf * 4 >= brace) return 'generic' // some JSON apps use %s alongside {x}
+  return 'brace'
+}
+const ICU_CONTROL = /\{\s*[a-zA-Z0-9_]+\s*,\s*(?:plural|selectordinal|select)\s*,/
+const I18NEXT_TOKEN = /(?<!\{)\{\{\s*[a-zA-Z_$][\w.$-]*\s*(?:,[^{}]*)?\}\}/g
+
+/* --------------------------------------------------------------- ICU AST */
+/** Collect ICU argument names recursively (plural/select options, tags). */
+function icuArgs(ast, acc) {
+  for (const n of ast) {
+    if (n.type === TYPE.argument || n.type === TYPE.number || n.type === TYPE.date || n.type === TYPE.time) acc.add(n.value)
+    else if (n.type === TYPE.plural || n.type === TYPE.select) {
+      acc.add(n.value)
+      for (const opt of Object.values(n.options)) icuArgs(opt.value, acc)
+    } else if (n.type === TYPE.tag) icuArgs(n.children || [], acc)
+  }
+  return acc
+}
+
+/**
+ * Try to read a brace-style string as ICU. Returns a Set of argument names, or
+ * null when the string is not parseable as ICU (i18next `{{x}}`, vue literal
+ * escapes, stray braces) — callers then fall back to the regex grammar.
+ */
+function tryIcuArgs(str) {
+  // i18next-style {{x}} tokens are not ICU; ICU's own `{a, plural, one {{b} x}}` nesting is fine.
+  if (!str.includes('{') || I18NEXT_TOKEN.test(str)) return null
+  I18NEXT_TOKEN.lastIndex = 0
+  try {
+    return icuArgs(parse(str), new Set())
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Blank out balanced ICU argument blocks (`{n, plural, one {…} other {…}}`) so a
+ * regex pass doesn't read option text like `{element}` as a placeholder (FP#2a).
+ * Arguments INSIDE the blocks are recovered from the AST instead (FP#8).
+ */
+const ICU_ARG_AT = /^\{\s*[a-zA-Z0-9_]+\s*,\s*(?:plural|selectordinal|select|number|date|time|spellout|ordinal|duration)\b/
+function stripIcuArgBlocks(str) {
+  let out = ''
+  for (let i = 0; i < str.length; ) {
+    if (str[i] === '{' && ICU_ARG_AT.test(str.slice(i))) {
+      let depth = 0, j = i
+      for (; j < str.length; j++) {
+        if (str[j] === '{') depth++
+        else if (str[j] === '}' && --depth === 0) { j++; break }
+      }
+      out += ' '.repeat(j - i)
+      i = j
+    } else out += str[i++]
+  }
+  return out
+}
+
+/* ---------------------------------------------------------- extraction */
+const VUE_LITERAL = /\{'[^']*'\}/g // vue-i18n: {'{'} renders a literal brace
+
+/** Regex pass in document order (bare printf slots are numbered by appearance). */
+function extractOrdered(str, grammar) {
   if (typeof str !== 'string') return []
-  let working = str
+  let working = grammar.literal ? str.replace(VUE_LITERAL, (m) => ' '.repeat(m.length)) : str
   const found = []
-  for (const pattern of PLACEHOLDER_PATTERNS) {
+  for (const pattern of grammar.patterns) {
     const matches = working.match(pattern) || []
     for (const m of matches) found.push(m)
     // blank out matched spans so later, looser patterns don't double-count
@@ -47,122 +159,29 @@ function extractOrdered(str) {
   return found
 }
 
-// An ICU argument used with a function: {count, plural, …}, {gender, select, …},
-// {n, selectordinal, …}, {v, number}, {d, date}, … The bare `{count,` form does
-// not match the single-brace placeholder pattern, so a translation that upgrades
-// a plain {count} to an ICU plural would otherwise read as "dropped {count}".
-const ICU_ARG =
-  /\{\s*([a-zA-Z0-9_]+)\s*,\s*(?:plural|selectordinal|select|number|date|time|spellout|ordinal|duration)\b/g
-const SIMPLE_BRACE = /^\{([a-zA-Z0-9_.]+)\}$/ // a react-intl/ICU {name} placeholder token
-
-/** Names used as ICU function arguments in a string. */
-function icuArgNames(str) {
-  const set = new Set()
-  if (typeof str !== 'string') return set
-  ICU_ARG.lastIndex = 0
-  let m
-  while ((m = ICU_ARG.exec(str)) !== null) set.add(m[1])
-  return set
-}
-
 /**
- * Remove balanced ICU argument blocks — `{count, plural, one {…} other {…}}`,
- * `{gender, select, …}` — from a string. Their sub-message text is wrapped in
- * braces as ICU syntax, not placeholders, so `{count, plural, one {element}…}`
- * must not read `{element}` as an invented placeholder. The argument name itself
- * is recovered separately via icuArgNames, so nothing is lost. (Rare real
- * placeholders NESTED inside a sub-message are dropped too — a safe under-report,
- * never a false alarm; ICU-source strings are validated by the ICU checker.)
+ * Extract all placeholder tokens from a string (sorted, duplicates preserved).
+ * Public API kept stable; pass a format name for format-aware extraction.
+ * @param {string} str
+ * @param {string} [format='generic']
+ * @returns {string[]}
  */
-const ICU_ARG_AT =
-  /^\{\s*[a-zA-Z0-9_]+\s*,\s*(?:plural|selectordinal|select|number|date|time|spellout|ordinal|duration)\b/
-
-function stripIcuArgBlocks(str) {
-  if (typeof str !== 'string') return ''
-  let out = ''
-  for (let i = 0; i < str.length; ) {
-    if (str[i] === '{' && ICU_ARG_AT.test(str.slice(i))) {
-      // walk to the brace that closes this block
-      let depth = 0
-      let j = i
-      for (; j < str.length; j++) {
-        if (str[j] === '{') depth++
-        else if (str[j] === '}' && --depth === 0) {
-          j++
-          break
-        }
-      }
-      out += ' '
-      i = j
-    } else {
-      out += str[i]
-      i++
-    }
-  }
-  return out
+export function extractPlaceholders(str, format = 'generic') {
+  return extractOrdered(str, grammarOf(format)).sort()
 }
 
-/**
- * Does the translation preserve exactly the placeholders of the source?
- * A source `{x}` is considered present when the translation uses `x` as an ICU
- * argument (`{x, plural|select|…}`) and vice-versa — upgrading a plain variable
- * to an ICU plural is correct, not a dropped placeholder.
- * @param {string} source
- * @param {string} translation
- * @returns {{ ok: boolean, missing: string[], added: string[] }}
- */
-export function validatePlaceholders(source, translation) {
-  // An empty source string defines no placeholders — nothing to preserve or
-  // violate. Key-as-source formats (gettext-JSON / Jed) put the English in the
-  // key and leave the base value empty; without this, every placeholder in a
-  // translation would read as "added".
-  if (typeof source !== 'string' || source.trim() === '') return { ok: true, missing: [], added: [] }
-  const srcIcu = icuArgNames(source)
-  const outIcu = icuArgNames(translation)
-  // Extract from ICU-stripped copies so plural/select sub-message text is not
-  // mistaken for placeholders; the argument names are recovered via *Icu above.
-  const src = normalizeTokens(extractOrdered(stripIcuArgBlocks(source)))
-  const out = normalizeTokens(extractOrdered(stripIcuArgBlocks(translation)))
-  const missing = []
-  const added = []
-  for (const [key, display] of src) {
-    if (out.has(key)) continue
-    const b = SIMPLE_BRACE.exec(key)
-    if (b && outIcu.has(b[1])) continue // used as an ICU arg in the translation
-    missing.push(display)
-  }
-  for (const [key, display] of out) {
-    if (src.has(key)) continue
-    const b = SIMPLE_BRACE.exec(key)
-    if (b && srcIcu.has(b[1])) continue // source used it as an ICU arg
-    added.push(display)
-  }
-  missing.sort()
-  added.sort()
-  return { ok: missing.length === 0 && added.length === 0, missing, added }
-}
-
-// printf-family specifier, bare (%s, %@, %lld, %.2f) or positional (%1$s, %2$@).
+/* ------------------------------------------------------- normalization */
 const PRINTF_POSITIONAL = /^%(\d+)\$(.+)$/
-const PRINTF_BARE = /^%(?!\{)(.+)$/
+const PRINTF_BARE = /^%(?![{<(])(.+)$/
+const DOUBLE_INNER = /^\{\{\s*([^{},]+?)\s*(?:,.*)?\}\}$/ // {{ name, format }} → name
 
 /**
- * Turn an extracted token list into a comparable identity → display-text map.
- *
- * Named placeholders ({name}, {{name}}, %{name}, $t(key)) identify a VARIABLE:
- * a source that repeats one — vue-i18n pipe plurals "{n} item | {n} items",
- * Rails "%{instance} … %{instance}" — is satisfied by a translation that uses it
- * once (FP#3, found on Chatwoot/Mastodon: 150+ bogus "dropped" reports).
- * Sets, not multisets, for those.
- *
- * printf specifiers identify an ARGUMENT SLOT by position. Bare ones are
- * numbered by order of appearance, so "%@ %@" ≡ "%1$@ %2$@" (FP#5, found on
- * Phoenix iOS: translators switch to positional to reorder — legal and correct),
- * while "%s %s" → "%s" still reports the second slot dropped, and "%3$@" against
- * a two-argument source still reports an unexpected slot (a real crash).
- * Display text stays the token as written in that string.
+ * Turn a token list into identity → display map.
+ *   {{ name }} / {{name, number}}  → identity {{name}}      (whitespace + format spec ignored)
+ *   %1$s explicit / bare %s        → identity %<slot>$spec  (bare numbered by appearance)
+ *   everything else                → identity = token
  */
-function normalizeTokens(tokens) {
+function identities(tokens) {
   const map = new Map()
   let slot = 0
   for (const tok of tokens) {
@@ -170,8 +189,49 @@ function normalizeTokens(tokens) {
     let m
     if ((m = PRINTF_POSITIONAL.exec(tok))) key = `%${m[1]}$${m[2]}`
     else if ((m = PRINTF_BARE.exec(tok))) key = `%${++slot}$${m[1]}`
+    else if ((m = DOUBLE_INNER.exec(tok))) key = `{{${m[1]}}}`
     if (!map.has(key)) map.set(key, tok)
   }
   return map
 }
 
+/** Identities for one side: ICU AST when the grammar allows and the string parses, else regex. */
+function sideIdentities(str, grammar) {
+  if (grammar.ast) {
+    const args = tryIcuArgs(str)
+    if (args) {
+      // AST args (incl. those nested in plural/select options) ∪ regex tokens found
+      // OUTSIDE ICU blocks. The regex leg keeps apostrophe-adjacent placeholders —
+      // `{completed}'{total}` — which strict ICU reads as a quoted literal but Flutter
+      // (use-escaping off by default) and most JSON runtimes still interpolate.
+      const map = new Map()
+      for (const a of args) map.set(`{${a}}`, `{${a}}`)
+      for (const [k, v] of identities(extractOrdered(stripIcuArgBlocks(str), grammar))) if (!map.has(k)) map.set(k, v)
+      return map
+    }
+  }
+  return identities(extractOrdered(str, grammar))
+}
+
+/**
+ * Does the translation preserve the placeholders of the source?
+ * @param {string} source
+ * @param {string} translation
+ * @param {{format?: string|object}} [opts]  format name (see FORMATS) — default generic
+ * @returns {{ ok: boolean, missing: string[], added: string[] }}
+ */
+export function validatePlaceholders(source, translation, opts = {}) {
+  // An empty source defines no placeholders — key-as-source formats (gettext-JSON / Jed)
+  // leave the base value empty; without this every translated placeholder reads as "added".
+  if (typeof source !== 'string' || source.trim() === '') return { ok: true, missing: [], added: [] }
+  const grammar = grammarOf(opts.format)
+  const src = sideIdentities(source, grammar)
+  const out = sideIdentities(typeof translation === 'string' ? translation : '', grammar)
+  const missing = []
+  const added = []
+  for (const [key, display] of src) if (!out.has(key)) missing.push(display)
+  for (const [key, display] of out) if (!src.has(key)) added.push(display)
+  missing.sort()
+  added.sort()
+  return { ok: missing.length === 0 && added.length === 0, missing, added }
+}

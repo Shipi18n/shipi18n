@@ -105,6 +105,7 @@ and unbalanced quotes (the `values-fr/strings.xml` AAPT build breaker).
 | `-r, --reporter <name>` | `human` | `human` \| `json` \| `sarif` \| `junit` |
 | `-o, --output <file>` | stdout | Write the report to a file |
 | `--ignore-keys <globs>` | — | Silence keys: `'*.copyright,home:mcp.badge'` |
+`--format <name>` — placeholder grammar override: `icu` · `i18next` · `vue` · `brace` · `rails` · `gettext` · `android` · `apple` · `generic`. Auto-detected per tree (ARB→icu, `.xcstrings`→apple, `res/`→android, `.po`→gettext, Rails YAML→rails, JSON sniffed from the source strings); set it only when the sniff guesses wrong.
 | `--severity <spec>` | — | Per-rule level override: `'untranslated=off,placeholder-added=error'` |
 | `--baseline <file>` | — | Fail only on findings NOT already in the baseline |
 | `--write-baseline` | — | Snapshot current findings into `--baseline` (default `.shipi18n/baseline.json`) and exit |

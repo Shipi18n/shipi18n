@@ -110,7 +110,7 @@ export function parseXcstrings(parsed) {
           } else if (typeof reference === 'string') {
             // Extra CLDR category (ru "few"/"many"): legitimate, not an orphan —
             // but its placeholders must still match the source.
-            const { missing } = validatePlaceholders(reference, value)
+            const { missing } = validatePlaceholders(reference, value, { format: 'apple' })
             if (missing.length) {
               findings.push({
                 lang,

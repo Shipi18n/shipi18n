@@ -126,7 +126,7 @@ export function parsePo(text) {
 
     if (e.msgidPlural !== undefined) {
       // Plural entry — checked here, not via the flat engine.
-      const need = extractPlaceholders(e.msgidPlural)
+      const need = extractPlaceholders(e.msgidPlural, 'gettext')
       const forms = e.msgstrs || []
       const expected = nplurals ?? forms.length
       for (let i = 0; i < expected; i++) {
@@ -135,7 +135,7 @@ export function parsePo(text) {
           findings.push({ type: 'missing-key', severity: 'error', path: `${e.msgid} [plural ${i}]`, message: `missing plural form msgstr[${i}]` })
           continue
         }
-        const have = new Set(extractPlaceholders(v))
+        const have = new Set(extractPlaceholders(v, 'gettext'))
         const missing = need.filter((p) => !have.has(p))
         if (missing.length) {
           findings.push({ type: 'placeholder-missing', severity: 'error', path: `${e.msgid} [plural ${i}]`, missing, message: `dropped ${missing.join(', ')}`, source: e.msgidPlural, translation: v })

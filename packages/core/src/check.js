@@ -24,7 +24,7 @@ const looksLikePipePlural = (str) => pluralFormCount(str) > 1 && /\{[^}]+\}/.tes
 /** Rails/i18n-gem date & time format keys hold strftime patterns, not placeholders. */
 const isDateFormatKey = (path) => /(^|\.)(date|time)\.formats(\.|$)/.test(path)
 /** CLDR plural category keys whose form may legitimately omit the count. */
-const isCldrSingularKey = (path) => /(^|\.)(one|zero)$/.test(path)
+const isCldrSingularKey = (path) => /(^|\.)(one|zero)$|_(one|zero)$/.test(path)
 const isCountPlaceholder = (ph) => /^(\{\{?|%\{)(count|n|num|number)\}?\}$/.test(ph)
 
 /** Heuristic for "probably untranslated": multi-word and contains letters. */
@@ -83,7 +83,13 @@ function glossaryFindings(s, t, glossary, targetLang, path) {
   return findings
 }
 
-export function checkTranslations({ source, target, targetLang = 'target', glossary }) {
+/**
+ * Source-only "suffix" variables: `{plural}` / `{{ plural }}` / `{s}` carry an
+ * English "s"; most languages legitimately drop them. Never a hard error.
+ */
+const isSuffixPlaceholder = (ph) => /^(\{\{?\s*|%\{)(plural|s|es|pluralSuffix)\s*\}?\}$/.test(ph)
+
+export function checkTranslations({ source, target, targetLang = 'target', glossary, format = 'generic' }) {
   const findings = []
   const src = flatten(source)
   const tgt = flatten(target)
@@ -142,22 +148,39 @@ export function checkTranslations({ source, target, targetLang = 'target', gloss
     // ICU MessageFormat (plural/select) is validated ICU-aware — the regex
     // placeholder check would read its sub-messages as bogus placeholders.
     if (isICUControl(s)) {
-      findings.push(...checkICU(s, t, targetLang, path))
+      const icu = checkICU(s, t, targetLang, path)
+      // A plural collapsed to one form ("{n, plural, …}" → "Tili") drops only the
+      // plural argument. Fidelity loss, not a broken variable → warning tier.
+      if (!isICUControl(t)) {
+        const pluralArgs = [...s.matchAll(/\{\s*([a-zA-Z0-9_]+)\s*,\s*(?:plural|selectordinal)\s*,/g)].map((m) => `{${m[1]}}`)
+        for (const f of icu) {
+          if (f.type === 'placeholder-missing' && f.missing.every((x) => pluralArgs.includes(x))) {
+            f.severity = 'warning'
+            f.message += ' (plural simplified to a single form)'
+          }
+        }
+      }
+      findings.push(...icu)
     } else if (isDateFormatKey(path)) {
       // strftime patterns — Rails `time.formats.short: "%b %-d"` — aren't
       // placeholders, and locales legitimately reorder/drop fields (FP#6).
     } else {
-      const { missing, added } = validatePlaceholders(s, t)
+      const { missing, added } = validatePlaceholders(s, t, { format })
       if (missing.length) {
-        // CLDR `one`/`zero` forms may omit the count by design ("one post" →
-        // "בהודעה אחת"). Not a hard error when the count is all that's missing (FP#7).
-        const soft = isCldrSingularKey(path) && missing.every(isCountPlaceholder)
+        // Warning tier (policy, not parsing): CLDR/i18next singular forms may omit
+        // the count ("one post" → "בהודעה אחת"); English plural-suffix variables
+        // ({plural}, {{ plural }}) are dropped by design in most languages.
+        // A literal `{}` in the translation is a placeholder that lost its name — always a real break.
+        const emptyBrace = /\{\s*\}/.test(t)
+        const singular = !emptyBrace && isCldrSingularKey(path) && missing.every(isCountPlaceholder)
+        const suffix = !emptyBrace && missing.every(isSuffixPlaceholder)
+        const note = singular ? ' (singular form — may be intentional)' : suffix ? ' (English plural-suffix variable — usually intentional)' : ''
         findings.push({
           type: 'placeholder-missing',
-          severity: soft ? 'warning' : 'error',
+          severity: singular || suffix ? 'warning' : 'error',
           path,
           missing,
-          message: `dropped ${missing.join(', ')}${soft ? ' (singular form — may be intentional)' : ''}`,
+          message: `dropped ${missing.join(', ')}${note}`,
           source: s,
           translation: t,
         })

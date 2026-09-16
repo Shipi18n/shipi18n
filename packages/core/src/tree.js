@@ -24,8 +24,41 @@ import { scanSecrets } from './secrets.js'
 // concern. `.json` is matched first so it stays the default when both exist.
 const LOCALE_EXT = /\.(json|ya?ml)$/i
 const stripExt = (name) => name.replace(LOCALE_EXT, '')
-const readData = (file) =>
-  /\.ya?ml$/i.test(file) ? parseYaml(readFileSync(file, 'utf8')) : JSON.parse(readFileSync(file, 'utf8'))
+const readData = (file) => {
+  const yaml = /\.ya?ml$/i.test(file)
+  const data = yaml ? parseYaml(readFileSync(file, 'utf8')) : JSON.parse(readFileSync(file, 'utf8'))
+  // Only YAML gets the Rails root-key unwrap: a JSON namespace whose single root
+  // key happens to look like a locale code (`bot.json` → `{ "bot": … }`) is not Rails.
+  return yaml ? unwrapLocaleRoot(data, stripExt(basename(file))) : data === null || data === undefined ? {} : data
+}
+
+/**
+ * Rails / i18n-gem YAML wraps everything under the locale code (`en:` / `pt-BR:`).
+ * Without unwrapping, `en.yml` and `de.yml` share no keys and the checker sees
+ * two disjoint trees — every Rails repo scored zero in the first scans. A
+ * single root key equal to the file's locale stem (case/`-`/`_` tolerant), or
+ * one that simply looks like a locale code, is unwrapped. A `null` root (an
+ * empty stub file) is an empty locale, not a crash.
+ */
+const LOCALE_ROOT = /^[a-z]{2,3}(?:[-_][A-Za-z0-9]{2,8})*$/
+export function unwrapLocaleRoot(data, stem) {
+  if (data === null || data === undefined) return {}
+  if (typeof data !== 'object' || Array.isArray(data)) return data
+  const keys = Object.keys(data)
+  if (keys.length !== 1) return data
+  const k = keys[0]
+  const norm = (x) => String(x).toLowerCase().replace(/_/g, '-')
+  if ((stem && norm(k) === norm(stem)) || LOCALE_ROOT.test(k)) {
+    const inner = data[k]
+    if (inner && typeof inner === 'object' && !Array.isArray(inner)) {
+      Object.defineProperty(inner, RAILS_ROOT, { value: k, enumerable: false })
+      return inner
+    }
+  }
+  return data
+}
+/** Marker set on an unwrapped Rails root (non-enumerable so it never flattens into keys). */
+export const RAILS_ROOT = Symbol('railsRoot')
 
 // Bound worst-case memory on untrusted locale files: a huge single text node or
 // attribute (or an enormous PO msgstr) that entity/nesting limits don't cover.
@@ -37,6 +70,7 @@ const readTextCapped = (file) => {
   return readFileSync(file, 'utf8')
 }
 import { flatten, MAX_DEPTH } from './translate.js'
+import { detectFormat } from './placeholders.js'
 import { lockId, lockFinding } from './locks.js'
 import { reviewTranslations } from './review.js'
 
@@ -214,11 +248,21 @@ const countLeaves = (obj, depth = 0) => {
 
 /* ------------------------------------------------------------------ modes */
 
-export function jsonMode({ input, source, isIgnored, glossary, locks }) {
+export function jsonMode({ input, source, isIgnored, glossary, locks, format }) {
   const layout = discoverLayout(input, source)
 
   const sourceData = {}
   for (const [ns, file] of Object.entries(layout.source)) sourceData[ns] = readData(file) // broken source = usage error
+
+  // Sniff the interpolation grammar once from the source strings (i18next vs
+  // ICU/vue braces vs Rails %{…}); an explicit `format` wins.
+  const srcFiles = Object.values(layout.source)
+  const detected =
+    format ||
+    detectFormat(
+      Object.values(sourceData).flatMap((d) => Object.values(flatten(d))),
+      { ext: /\.ya?ml$/i.test(srcFiles[0] || '') ? 'yaml' : 'json', unwrappedRailsRoot: Object.values(sourceData).some((d) => d && d[RAILS_ROOT]) }
+    )
 
   const perLang = {}
   const languages = []
@@ -242,7 +286,7 @@ export function jsonMode({ input, source, isIgnored, glossary, locks }) {
         namespaces.push({ ns, file: rel(file), findings, stats: statsFrom(findings, srcKeys, 0) })
         continue
       }
-      const { findings, stats } = checkTranslations({ source: sourceData[ns], target: data, targetLang: lang, glossary })
+      const { findings, stats } = checkTranslations({ source: sourceData[ns], target: data, targetLang: lang, glossary, format: detected })
       if (locks) findings.push(...lockFindings(locks, lang, ns, sourceData[ns], data))
       const kept = findings.filter((f) => !isIgnored(ns, f.path))
       addPairs(perLang, lang, ns, sourceData[ns], data, isIgnored)
@@ -250,7 +294,7 @@ export function jsonMode({ input, source, isIgnored, glossary, locks }) {
     }
     languages.push(aggregateLanguage(lang, namespaces))
   }
-  return finishResult({ layout: layout.layout, dir: layout.dir, source, languages }, perLang)
+  return finishResult({ layout: layout.layout, format: detected, dir: layout.dir, source, languages }, perLang)
 }
 
 export function arbMode({ input, source, isIgnored, glossary }) {
@@ -266,7 +310,7 @@ export function arbMode({ input, source, isIgnored, glossary }) {
   for (const [lang, data] of Object.entries(byLang)) {
     if (lang === source) continue
     const ns = files[lang].replace(/\.arb$/, '')
-    const { findings, stats } = checkTranslations({ source: byLang[source], target: data, targetLang: lang, glossary })
+    const { findings, stats } = checkTranslations({ source: byLang[source], target: data, targetLang: lang, glossary, format: 'icu' })
     const kept = findings.filter((f) => !isIgnored(ns, f.path))
     addPairs(perLang, lang, ns, byLang[source], data, isIgnored)
     languages.push(
@@ -287,7 +331,7 @@ export function xcstringsMode({ input, source, isIgnored, glossary }) {
   const perLang = {}
   const languages = []
   for (const [lang, data] of Object.entries(parsed.languages)) {
-    const { findings, stats } = checkTranslations({ source: parsed.source, target: data, targetLang: lang, glossary })
+    const { findings, stats } = checkTranslations({ source: parsed.source, target: data, targetLang: lang, glossary, format: 'apple' })
     addPairs(perLang, lang, ns, parsed.source, data, isIgnored)
     const adapterFindings = parsed.findings.filter((f) => f.lang === lang).map(({ lang: _l, ...f }) => f)
     const kept = [...findings, ...adapterFindings].filter((f) => !isIgnored(ns, f.path))
@@ -327,7 +371,7 @@ export function androidStringsMode({ input, source, isIgnored, glossary }) {
       languages.push(aggregateLanguage(lang, [{ ns, file: rel(file), findings, stats: statsFrom(findings, 0, 0) }]))
       continue
     }
-    const { findings: engineFindings, stats } = checkTranslations({ source: sourceData, target: data, targetLang: lang, glossary })
+    const { findings: engineFindings, stats } = checkTranslations({ source: sourceData, target: data, targetLang: lang, glossary, format: 'android' })
     // Escaping errors AAPT would throw but the decoded values can't reveal.
     const findings = [...engineFindings, ...androidEscapingFindings(rawXml)]
     const kept = findings.filter((f) => !isIgnored(ns, f.path))
@@ -382,7 +426,7 @@ export function poMode({ input, source, isIgnored, glossary }) {
     }
     const lang = parsed.language || poLangFromPath(file)
     if (!asFile && lang === source) continue // the source-language catalog isn't a target
-    const { findings, stats } = checkTranslations({ source: parsed.source, target: parsed.target, targetLang: lang, glossary })
+    const { findings, stats } = checkTranslations({ source: parsed.source, target: parsed.target, targetLang: lang, glossary, format: 'gettext' })
     addPairs(perLang, lang, ns, parsed.source, parsed.target, isIgnored)
     const kept = [...findings, ...parsed.findings].filter((f) => !isIgnored(ns, f.path))
     ;(byLang[lang] = byLang[lang] || []).push({
@@ -421,7 +465,7 @@ export function xliffMode({ input, source, isIgnored, glossary }) {
     }
     const lang = parsed.trgLang || basename(file).replace(XLIFF_EXT, '').replace(/_/g, '-')
     if (!asFile && lang === source) continue // source-language catalog isn't a target
-    const { findings, stats } = checkTranslations({ source: parsed.source, target: parsed.target, targetLang: lang, glossary })
+    const { findings, stats } = checkTranslations({ source: parsed.source, target: parsed.target, targetLang: lang, glossary, format: detectFormat(Object.values(flatten(parsed.source))) })
     addPairs(perLang, lang, ns, parsed.source, parsed.target, isIgnored)
     const kept = [...findings, ...parsed.findings].filter((f) => !isIgnored(ns, f.path))
     ;(byLang[lang] = byLang[lang] || []).push({
@@ -466,7 +510,7 @@ export function recomputeTotals(result) {
  * Route by what the input actually is: an .xcstrings catalog, a directory of
  * .arb files, or a plain JSON locale tree.
  */
-export function runCheck({ input, source = 'en', ignoreKeys, glossary, locks } = {}) {
+export function runCheck({ input, source = 'en', ignoreKeys, glossary, locks, format } = {}) {
   const isIgnored = compileIgnores(ignoreKeys)
   const path = resolve(input)
   if (existsSync(path) && statSync(path).isFile() && path.endsWith('.xcstrings')) {
@@ -494,7 +538,7 @@ export function runCheck({ input, source = 'en', ignoreKeys, glossary, locks } =
   if (existsSync(path) && statSync(path).isDirectory() && readdirSync(path).some((f) => XLIFF_EXT.test(f))) {
     return xliffMode({ input, source, isIgnored, glossary })
   }
-  return jsonMode({ input, source, isIgnored, glossary, locks })
+  return jsonMode({ input, source, isIgnored, glossary, locks, format })
 }
 
 /**

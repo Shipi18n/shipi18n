@@ -56,6 +56,7 @@ export function checkCommand(program) {
     .command('check [input]')
     .description('Validate translated locale files against the source language (no LLM, no key)')
     .option('-s, --source <language>', 'Source language', 'en')
+    .option('--format <name>', 'Placeholder grammar override: icu | i18next | vue | brace | rails | gettext | android | apple | generic (default: auto-detect from the tree)')
     .option('-r, --reporter <name>', 'Output format: human | json | sarif | junit', 'human')
     .option('-o, --output <file>', 'Write the report to a file instead of stdout')
     .option('--json', 'Shorthand for --reporter json')
@@ -100,6 +101,7 @@ export function checkCommand(program) {
           ignoreKeys: opts.ignoreKeys,
           glossary,
           locks: locksFor(opts),
+          format: opts.format,
         })
       } catch (err) {
         console.error(chalk.red(`Error: ${err.message}`))
