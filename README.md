@@ -25,6 +25,21 @@ npx @shipi18n/cli check ./locales -s en
 No API key, no account, no config. Missing keys, dropped placeholders, collapsed plurals, empty
 values and untranslated copy — as human output, JSON, SARIF (GitHub PR annotations) or JUnit.
 
+**Found in the wild.** The same command on real projects — this is Hoppscotch's Afrikaans locale, before
+[the fix we sent upstream](https://github.com/hoppscotch/hoppscotch/pull/6648):
+
+```text
+$ npx @shipi18n/cli check packages/hoppscotch-common/locales -s en
+✗ af  coverage 98.7%  5 error(s)
+    error  state.connected_to      placeholder-missing — dropped {name}      (translation: "Gekoppel aan {naam}")
+    error  team.invited_to_team    placeholder-missing — dropped {workspace} (translation: "{owner} invited you to join {team}")
+    error  import.file_size_limit_exceeded_warning_single_file  placeholder-missing — dropped {sizeLimit}
+```
+
+We scan public repos, verify every finding by hand, and send the fix upstream — Solidus merged 13 strings the
+same day, a nocodb maintainer swept 39 locales off one issue. The running tally, one row per repo:
+**[shipi18n.com/oss](https://shipi18n.com/oss)**.
+
 > If the check catches something in your project, consider starring the repo — stars are how the
 > next person with a broken `es.json` finds this.
 
