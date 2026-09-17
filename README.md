@@ -25,19 +25,26 @@ npx @shipi18n/cli check ./locales -s en
 No API key, no account, no config. Missing keys, dropped placeholders, collapsed plurals, empty
 values and untranslated copy — as human output, JSON, SARIF (GitHub PR annotations) or JUnit.
 
-**Found in the wild.** The same command on real projects — this is Hoppscotch's Afrikaans locale, before
-[the fix we sent upstream](https://github.com/hoppscotch/hoppscotch/pull/6648):
+**Found in the wild.** The same command on a real project — Hoppscotch's Afrikaans locale as it was
+when we ran it (structural rules only; the missing-key noise switched off so the placeholder findings stand out):
 
 ```text
-$ npx @shipi18n/cli check packages/hoppscotch-common/locales -s en
-✗ af  coverage 98.7%  5 error(s)
-    error  state.connected_to      placeholder-missing — dropped {name}      (translation: "Gekoppel aan {naam}")
-    error  team.invited_to_team    placeholder-missing — dropped {workspace} (translation: "{owner} invited you to join {team}")
+$ npx @shipi18n/cli check packages/hoppscotch-common/locales -s en \
+    --severity 'missing-key=off,untranslated=off,orphan-key=off'
+
+✗ af  coverage 100.0%  7 error(s), 5 warning(s)
+    error  import.file_size_limit_exceeded_warning_multiple_files  placeholder-missing — dropped {sizeLimit}
     error  import.file_size_limit_exceeded_warning_single_file  placeholder-missing — dropped {sizeLimit}
+    error  state.connected_to  placeholder-missing — dropped {name}
+    warning  state.connected_to  placeholder-added — unexpected {naam}
+    error  team.invited_to_team  placeholder-missing — dropped {workspace}
+    warning  team.invited_to_team  placeholder-added — unexpected {team}
+    …
 ```
 
-We scan public repos, verify every finding by hand, and send the fix upstream — Solidus merged 13 strings the
-same day, a nocodb maintainer swept 39 locales off one issue. The running tally, one row per repo:
+`{naam}` is `{name}` translated; vue-i18n will never substitute it. We scan public repos, verify every finding by
+hand, and send the fix upstream ([this one](https://github.com/hoppscotch/hoppscotch/pull/6648)) — Solidus merged
+13 strings the same day, a nocodb maintainer swept 39 locales off one issue. The running tally, one row per repo:
 **[shipi18n.com/oss](https://shipi18n.com/oss)**.
 
 > If the check catches something in your project, consider starring the repo — stars are how the
