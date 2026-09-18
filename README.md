@@ -43,9 +43,19 @@ $ npx @shipi18n/cli check packages/hoppscotch-common/locales -s en \
 ```
 
 `{naam}` is `{name}` translated; vue-i18n will never substitute it. We scan public repos, verify every finding by
-hand, and send the fix upstream ([this one](https://github.com/hoppscotch/hoppscotch/pull/6648)) — Solidus merged
-13 strings the same day, a nocodb maintainer swept 39 locales off one issue. The running tally, one row per repo:
-**[shipi18n.com/oss](https://shipi18n.com/oss)**.
+hand against the source language, and send the fix upstream. Running tally, one row per repo:
+**[shipi18n.com/oss](https://shipi18n.com/oss)** — 64 repos scanned · 21 ship a verified broken string · 119 strings
+verified by hand · 3 fixed upstream in the first week.
+
+| Repo | What happened |
+|---|---|
+| Solidus | 13 dropped `%{…}` interpolations in pt-BR — [PR merged the same day](https://github.com/solidusio/solidus/pull/6626), three core approvals |
+| Plane | Czech toasts lost `{templateName}`/`{templateType}` — [PR merged in 3 hours](https://github.com/makeplane/plane/pull/9848) |
+| nocodb | [our issue](https://github.com/nocodb/nocodb/issues/14573) → [maintainer PR sweeping all 39 locales](https://github.com/nocodb/nocodb/pull/14581) |
+| Excalidraw | [our issue](https://github.com/excalidraw/excalidraw/issues/12097) → [contributor fix + a placeholder-parity test suite](https://github.com/excalidraw/excalidraw/pull/12109) |
+| Hoppscotch | the `af` run above — [PR open](https://github.com/hoppscotch/hoppscotch/pull/6648), 7 strings |
+
+Every false positive the scan exposed in our own checker became a fixture in [`evals/placeholders/corpus.jsonl`](evals/placeholders/corpus.jsonl) first.
 
 > If the check catches something in your project, consider starring the repo — stars are how the
 > next person with a broken `es.json` finds this.
