@@ -1,5 +1,10 @@
 # @shipi18n/cli
 
+## 2.11.4
+
+- Picks up `@shipi18n/core@2.11.4`: empty numbered sentence fragments with translated siblings drop from error to
+  info, and the pipe-plural rule no longer fires on Rails, gettext, Android or Apple formats.
+
 ## 2.11.3
 
 - Pulls core 2.11.3: format-aware placeholder grammars, Rails YAML root-key unwrap, eleven false-positive

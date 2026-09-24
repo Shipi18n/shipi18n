@@ -1,5 +1,16 @@
 # @shipi18n/core
 
+## 2.11.4
+
+- Two false-positive classes found by running the checker over real repositories while preparing upstream fixes.
+- **Empty numbered sentence fragments.** A key like `…step_2.part_1` is reported as `info` rather than `error`
+  when it is empty but its sibling fragments are translated — Japanese and Korean legitimately leave one slot
+  empty and move the verb into `part_3` (found on Hoppscotch). An empty fragment whose siblings are all empty is
+  still a real gap and still an error.
+- **Pipe plurals are vue-i18n only.** The `plural-forms` rule no longer runs on Rails YAML, gettext, Android or
+  Apple formats, none of which use `|` as a separator. ifme's `'if-me.org | Your meeting "%{meeting_name}" …'`
+  was read as a collapsed plural against translations that had simply dropped the brand prefix.
+
 ## 2.11.3
 
 - Placeholder checking is now **format-aware**: one grammar per format (ICU/ARB, i18next, vue-i18n, Rails YAML,
