@@ -39,6 +39,10 @@ on:
         description: 'Pack and verify, but do not publish'
         type: boolean
         default: true
+      force_continue:
+        description: 'Do not fail if a published version is slow to appear on the registry'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -83,9 +87,18 @@ jobs:
       - name: Publish in dependency order
         env:
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+          FORCE_CONTINUE: ${{ github.event_name == 'workflow_dispatch' && inputs.force_continue || 'false' }}
         run: |
           set -euo pipefail
           mkdir -p /tmp/tars
+
+          # Ask the registry itself. `npm view` reads a local metadata cache that lagged the
+          # real registry by minutes during the v2.11.4 release, which is what made the wait
+          # below time out on a package that had in fact published successfully.
+          on_registry() {
+            curl -fsSL -H 'Cache-Control: no-cache' "https://registry.npmjs.org/$(echo "$1" | sed 's|/|%2F|')" 2>/dev/null \
+              | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{process.exit(JSON.parse(d).versions?.['$2']?0:1)}catch{process.exit(1)}})"
+          }
 
           publish_one() {
             local dir="$1"
@@ -93,7 +106,7 @@ jobs:
             name=$(node -p "require('./packages/$dir/package.json').name")
             version=$(node -p "require('./packages/$dir/package.json').version")
 
-            if npm view "$name@$version" version >/dev/null 2>&1; then
+            if on_registry "$name" "$version"; then
               echo "→ $name@$version already on the registry, skipping"
               return 0
             fi
@@ -117,11 +130,26 @@ jobs:
             echo "  published $name@$version"
 
             # cli and mcp resolve core from the registry, so wait for it to appear.
-            for i in $(seq 1 30); do
-              npm view "$name@$version" version >/dev/null 2>&1 && return 0
-              sleep 4
+            #
+            # This loop has been the single recurring failure of this workflow: it went red
+            # on BOTH the v2.11.3 and v2.11.4 releases with the package already published,
+            # leaving the registry mismatched (core up, cli not) until a human noticed and
+            # reran with --failed. On v2.11.4 it gave up 31 seconds before npm served the
+            # version. Two changes: wait 10 minutes instead of 2, and ask the registry
+            # directly — `npm view` answers from a cache that can be minutes stale, so it
+            # was both the wrong question and the slow one.
+            echo "  waiting for $name@$version to be served by the registry"
+            for i in $(seq 1 75); do
+              on_registry "$name" "$version" && { echo "  visible after $((i * 8))s"; return 0; }
+              sleep 8
             done
-            echo "✗ $name@$version did not become visible on the registry"
+
+            if [ "$FORCE_CONTINUE" = "true" ]; then
+              echo "::warning::$name@$version published but not visible after 10m; continuing because force_continue is set"
+              return 0
+            fi
+            echo "✗ $name@$version did not become visible on the registry after 10m"
+            echo "  it IS published — rerun with force_continue, or 'gh run rerun --failed' once npm catches up"
             exit 1
           }
 
