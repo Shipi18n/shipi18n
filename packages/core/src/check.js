@@ -21,6 +21,31 @@ import { isICUControl, checkICU } from './icu.js'
 const pluralFormCount = (str) => String(str).split('|').length
 const looksLikePipePlural = (str) => pluralFormCount(str) > 1 && /\{[^}]+\}/.test(str)
 
+/**
+ * Pipe-separated plurals are a vue-i18n/JSON convention. Rails pluralizes with
+ * `one:`/`other:` keys, gettext with msgstr[n], Android with <plurals>, Apple with
+ * .stringsdict — all of them treat `|` as an ordinary character. Running the pipe
+ * rule on those grammars reports prose as a collapsed plural (FP#13: ifme's
+ * `'if-me.org | Your meeting "%{meeting_name}" is tomorrow at %{time}!'` against
+ * id/vi translations that simply dropped the brand prefix).
+ */
+const PIPE_PLURAL_GRAMMARS = new Set(['vue', 'brace', 'generic', 'i18next', 'icu'])
+
+/** `a.b.part_1` / `a.b.line_2` — one slot of a sentence split across numbered keys. */
+const FRAGMENT_KEY = /(^|\.)([a-z_]*?_)?(part|line|segment|frag)_?(\d+)$/i
+const isNumberedFragment = (path) => FRAGMENT_KEY.test(path)
+/** True when a sibling fragment under the same parent carries a real translation. */
+function hasTranslatedSibling(path, tgt) {
+  const parent = path.slice(0, path.lastIndexOf('.'))
+  if (!parent) return false
+  for (const [k, v] of Object.entries(tgt)) {
+    if (k === path || !k.startsWith(parent + '.')) continue
+    if (!isNumberedFragment(k)) continue
+    if (typeof v === 'string' && v.trim() !== '') return true
+  }
+  return false
+}
+
 /** Rails/i18n-gem date & time format keys hold strftime patterns, not placeholders. */
 const isDateFormatKey = (path) => /(^|\.)(date|time)\.formats(\.|$)/.test(path)
 /** CLDR plural category keys whose form may legitimately omit the count. */
@@ -135,11 +160,19 @@ export function checkTranslations({ source, target, targetLang = 'target', gloss
     if (typeof s !== 'string') continue // numbers/booleans/null pass through untranslated by design
 
     if (t.trim() === '' && s.trim() !== '') {
+      // A sentence split across numbered fragments (part_1/part_2/part_3, or _1/_2)
+      // is legitimately empty in one slot for languages that reorder the clause:
+      // Hoppscotch's `sso.…step_2.part_1` is empty in ja and ko because both move
+      // the verb into part_3, while the other fragments are translated (FP#12).
+      // An empty fragment whose siblings are ALL empty is still a real gap.
+      const emptiedFragment = isNumberedFragment(path) && hasTranslatedSibling(path, tgt)
       findings.push({
         type: 'empty-value',
-        severity: 'error',
+        severity: emptiedFragment ? 'info' : 'error',
         path,
-        message: 'empty translation',
+        message: emptiedFragment
+          ? 'empty translation (numbered sentence fragment; siblings are translated, so this is probably deliberate word order)'
+          : 'empty translation',
         source: s,
       })
       continue
@@ -199,7 +232,7 @@ export function checkTranslations({ source, target, targetLang = 'target', gloss
     }
 
     const srcForms = pluralFormCount(s)
-    if (looksLikePipePlural(s) && pluralFormCount(t) !== srcForms) {
+    if (PIPE_PLURAL_GRAMMARS.has(format) && looksLikePipePlural(s) && pluralFormCount(t) !== srcForms) {
       findings.push({
         type: 'plural-forms',
         severity: 'error',
