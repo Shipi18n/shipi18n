@@ -117,7 +117,11 @@ export function discoverLayout(inputPath, sourceLang) {
  * languages produces a wall of nonsense findings. (Found in review: passing
  * --glossary locales/glossary.json made "glossary" a 0%-coverage language.)
  */
-const LOCALE_NAME = /^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/
+// Underscore-separated names (pt_br.yml, zh_Hans.yml, en_US.json — the Rails and
+// POSIX habit) are locales too. They are held to real subtag shapes (region,
+// numeric region, script) so app_config.json and de_formal.json stay out.
+// Found 2026-09-28: 24pullrequests' pt_br/zh_Hans/zh_Hant were silently skipped.
+const LOCALE_NAME = /^[a-z]{2,3}(?:(?:-[A-Za-z0-9]{2,8})+|(?:_(?:[A-Za-z]{2}|\d{3}|[A-Z][a-z]{3}))+)?$/
 
 export function flatLayout(dir, sourceLang) {
   // lang → actual file path (extension resolved, since a tree may be .json or

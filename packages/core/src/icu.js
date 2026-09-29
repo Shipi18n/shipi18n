@@ -56,7 +56,7 @@ const parseICU = (s) => {
  */
 function requiredCategories(lang, ordinal) {
   try {
-    const pr = new Intl.PluralRules(lang, { type: ordinal ? 'ordinal' : 'cardinal' })
+    const pr = new Intl.PluralRules(lang.replace(/_/g, '-'), { type: ordinal ? 'ordinal' : 'cardinal' })
     const cats = new Set(['other']) // ICU always requires `other`
     for (let n = 0; n <= 200; n++) cats.add(pr.select(n))
     return [...cats]
