@@ -1,5 +1,10 @@
 # @shipi18n/cli
 
+## 2.11.5
+
+- Picks up `@shipi18n/core@2.11.5`: `check` now reads underscore-named locale files (`pt_br.yml`, `zh_Hans.yml`,
+  `en_US.json`) instead of silently skipping them.
+
 ## 2.11.4
 
 - Picks up `@shipi18n/core@2.11.4`: empty numbered sentence fragments with translated siblings drop from error to

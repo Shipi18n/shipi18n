@@ -1,5 +1,14 @@
 # @shipi18n/core
 
+## 2.11.5
+
+- **Underscore-named locale files are read.** Flat trees with Rails/POSIX names — `pt_br.yml`, `zh_Hans.yml`,
+  `en_US.json` — had those locales silently dropped from the language list: no findings, no warning. On
+  24pullrequests that hid 3 of 20 locales and 4 real interpolation drops. Underscore subtags must look like a
+  region, numeric region or script, so `app_config.json` and `de_formal.json` are still not languages.
+- ICU plural-category checks now normalize `_` to `-` before `Intl.PluralRules`, which had been rejecting tags
+  like `ru_RU` and silently skipping the check.
+
 ## 2.11.4
 
 - Two false-positive classes found by running the checker over real repositories while preparing upstream fixes.
