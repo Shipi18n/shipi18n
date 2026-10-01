@@ -1,5 +1,9 @@
 # @shipi18n/core
 
+## 2.11.7
+
+- No changes; released alongside `@shipi18n/cli@2.11.7` (release plumbing).
+
 ## 2.11.6
 
 - **One plural form is correct for one-category languages.** Chinese, Japanese, Korean, Thai, Vietnamese,

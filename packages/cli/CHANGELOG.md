@@ -1,5 +1,11 @@
 # @shipi18n/cli
 
+## 2.11.7
+
+- No checker changes. Release plumbing only: the Docker image workflow now waits for npm the way the publish
+  workflow does (the v2.11.4 and v2.11.5 images were never built), and the pre-commit hook, `Dockerfile.cli`
+  and README now pin this version; a test fails the build when they drift from `package.json`.
+
 ## 2.11.6
 
 - Picks up `@shipi18n/core@2.11.6`: `plural-forms` accepts a single form in languages with one plural category,
