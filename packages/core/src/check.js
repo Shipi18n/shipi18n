@@ -21,6 +21,27 @@ import { isICUControl, checkICU } from './icu.js'
 const pluralFormCount = (str) => String(str).split('|').length
 const looksLikePipePlural = (str) => pluralFormCount(str) > 1 && /\{[^}]+\}/.test(str)
 
+// FP#15: Chinese, Japanese, Korean, Thai, Vietnamese, Indonesian… have one plural
+// category, so a pipe plural translated as a single form is correct for them
+// (found on Hoppscotch cn and Chatwoot zh_CN/zh_TW). It is only a break when the
+// one form is really both forms run together — the separator lost, as in nocodb
+// ja "…ドロップします。 {count} …ドロップします" — which shows up as more
+// placeholders than any single source form carries.
+const LANG_ALIASES = { cn: 'zh', tw: 'zh-TW' }
+function hasSinglePluralCategory(lang) {
+  const tag = String(lang).replace(/_/g, '-')
+  try {
+    const pr = new Intl.PluralRules(LANG_ALIASES[tag.toLowerCase()] || tag)
+    for (let n = 0; n <= 200; n++) if (pr.select(n) !== 'other') return false
+    return true
+  } catch {
+    return false
+  }
+}
+const placeholderCount = (str) => (String(str).match(/\{[^{}]+\}/g) || []).length
+const isMergedPlural = (s, t) =>
+  placeholderCount(t) > Math.max(...String(s).split('|').map(placeholderCount))
+
 /**
  * Pipe-separated plurals are a vue-i18n/JSON convention. Rails pluralizes with
  * `one:`/`other:` keys, gettext with msgstr[n], Android with <plurals>, Apple with
@@ -232,7 +253,9 @@ export function checkTranslations({ source, target, targetLang = 'target', gloss
     }
 
     const srcForms = pluralFormCount(s)
-    if (PIPE_PLURAL_GRAMMARS.has(format) && looksLikePipePlural(s) && pluralFormCount(t) !== srcForms) {
+    const singleFormOk =
+      pluralFormCount(t) === 1 && hasSinglePluralCategory(targetLang) && !isMergedPlural(s, t)
+    if (PIPE_PLURAL_GRAMMARS.has(format) && looksLikePipePlural(s) && pluralFormCount(t) !== srcForms && !singleFormOk) {
       findings.push({
         type: 'plural-forms',
         severity: 'error',
