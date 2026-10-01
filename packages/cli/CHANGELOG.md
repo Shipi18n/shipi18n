@@ -1,5 +1,10 @@
 # @shipi18n/cli
 
+## 2.11.6
+
+- Picks up `@shipi18n/core@2.11.6`: `plural-forms` accepts a single form in languages with one plural category,
+  unless both forms were merged into it.
+
 ## 2.11.5
 
 - Picks up `@shipi18n/core@2.11.5`: `check` now reads underscore-named locale files (`pt_br.yml`, `zh_Hans.yml`,

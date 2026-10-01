@@ -1,5 +1,14 @@
 # @shipi18n/core
 
+## 2.11.6
+
+- **One plural form is correct for one-category languages.** Chinese, Japanese, Korean, Thai, Vietnamese,
+  Indonesian and other languages whose CLDR rules have only `other` translate a `singular | plural` message as a
+  single form, and `plural-forms` no longer reports that (Hoppscotch `cn`, Chatwoot `zh_CN`/`zh_TW`). It still
+  reports a single form that is really both sentences with the separator lost, detected as more placeholders
+  than any one source form carries (nocodb `ja`, and `zh-Hant` written with a full-width `｜`). `cn` and `tw`
+  file names are read as Chinese.
+
 ## 2.11.5
 
 - **Underscore-named locale files are read.** Flat trees with Rails/POSIX names — `pt_br.yml`, `zh_Hans.yml`,
