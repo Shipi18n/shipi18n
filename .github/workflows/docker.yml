@@ -38,15 +38,22 @@ jobs:
       # The npm publish (publish.yml) and this workflow both fire on the v* tag,
       # so the image install can race ahead of the release. Wait for npm to serve
       # the exact version before building (also covers registry propagation delay).
+      # Ask the registry directly, as publish.yml does: `npm view` reads a metadata
+      # cache that lagged by minutes, and 5 minutes was not enough anyway — publish.yml
+      # waits up to 10m for core before it even starts the cli. This step timed out
+      # on v2.11.4 and v2.11.5 with the package already published, so neither image
+      # was built. 20 minutes covers both waits.
       - name: Wait for @shipi18n/cli on npm
         run: |
-          for i in $(seq 1 30); do
-            if npm view "@shipi18n/cli@${{ steps.v.outputs.version }}" version >/dev/null 2>&1; then
-              echo "npm is serving @shipi18n/cli@${{ steps.v.outputs.version }}"; exit 0
+          ver="${{ steps.v.outputs.version }}"
+          for i in $(seq 1 150); do
+            if curl -fsSL -H 'Cache-Control: no-cache' https://registry.npmjs.org/@shipi18n%2Fcli \
+                | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>process.exit(JSON.parse(d).versions?.['$ver']?0:1))"; then
+              echo "npm is serving @shipi18n/cli@$ver"; exit 0
             fi
-            echo "waiting for @shipi18n/cli@${{ steps.v.outputs.version }} on npm ($i/30)…"; sleep 10
+            echo "waiting for @shipi18n/cli@$ver on npm ($i/150)…"; sleep 8
           done
-          echo "timed out waiting for the npm release"; exit 1
+          echo "timed out after 20m waiting for @shipi18n/cli@$ver — if it is published, rerun this workflow"; exit 1
 
       # QEMU lets the amd64 runner also build the arm64 variant (Apple Silicon,
       # ARM servers) — without it the image is amd64-only and won't pull on ARM.
