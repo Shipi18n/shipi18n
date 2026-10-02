@@ -1,5 +1,15 @@
 # @shipi18n/cli
 
+## 2.12.0
+
+- **Built for AI coding agents:** after writing locale files an agent runs
+  `check ./locales --changed-only --json`, reads each finding's `fix`, and re-runs until exit `0`.
+- **`--changed-only [ref]`**: report only locale files changed vs a git ref (default `HEAD`), including
+  uncommitted and untracked files. If the source file changed, every locale is checked.
+- **`fix:` hints** in human output, a `fix` field in JSON, and `Fix:` in SARIF messages.
+- **Usage errors exit `2`, never `1`.** Commander's default for a bad flag was `1`, which a script reads as
+  "findings". Help and `--version` still exit `0`.
+
 ## 2.11.7
 
 - No checker changes. Release plumbing only: the Docker image workflow now waits for npm the way the publish

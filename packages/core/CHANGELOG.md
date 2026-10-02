@@ -1,5 +1,13 @@
 # @shipi18n/core
 
+## 2.12.0
+
+- **Fix hints.** Every finding in the human, JSON and SARIF reports carries a one-line `fix` (`withFixHints`,
+  `fixHints`). A dropped placeholder and an invented one at the same key are paired into a rename —
+  `rename {cuenta} to {count}` — without parsing any placeholder grammar.
+- **`filterChanged(result, files)`** keeps only the target files that changed and recomputes stats; a changed
+  source-side locale file keeps everything, since a source edit can break any translation.
+
 ## 2.11.7
 
 - No changes; released alongside `@shipi18n/cli@2.11.7` (release plumbing).
