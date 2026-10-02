@@ -5,6 +5,7 @@
  * `verdict()` alone, so switching reporter can never change whether CI fails.
  */
 import chalk from 'chalk'
+import { withFixHints } from './fixhints.js'
 
 /** Every rule has a documentation page; SARIF helpUri and the human footer
  *  point at it. Ids must match RULE_META below and the site's checkRules.js. */
@@ -12,7 +13,8 @@ const ruleUrl = (type) => `https://shipi18n.com/docs/rules/${type}`
 
 /* ------------------------------------------------------------------ human */
 
-export function humanReport(result, verdictResult) {
+export function humanReport(rawResult, verdictResult) {
+  const result = withFixHints(rawResult)
   const lines = []
   lines.push('')
   lines.push(
@@ -25,10 +27,15 @@ export function humanReport(result, verdictResult) {
     lines.push(
       `${mark} ${chalk.bold(l.lang)}  coverage ${(l.stats.coverage * 100).toFixed(1)}%  ${l.stats.errors} error(s), ${l.stats.warnings} warning(s)`
     )
+    const shownFix = new Set() // a renamed placeholder is two findings with one fix — print it once
     for (const f of all.slice(0, 50)) {
       const color = f.severity === 'error' ? chalk.red : chalk.yellow
       const where = result.layout === 'flat' ? f.path : `${f.ns}:${f.path}`
       lines.push(`    ${color(f.severity)}  ${chalk.cyan(where)}  ${f.type} — ${f.message}`)
+      if (f.fix && !shownFix.has(`${where} ${f.fix}`)) {
+        shownFix.add(`${where} ${f.fix}`)
+        lines.push(chalk.gray(`           fix: ${f.fix}`))
+      }
     }
     if (all.length > 50) lines.push(chalk.gray(`    … and ${all.length - 50} more`))
   }
@@ -51,7 +58,7 @@ export function humanReport(result, verdictResult) {
 /* ------------------------------------------------------------------- json */
 
 export function jsonReport(result, verdictResult) {
-  return JSON.stringify({ ...result, ok: verdictResult.ok, failures: verdictResult.failures }, null, 2)
+  return JSON.stringify({ ...withFixHints(result), ok: verdictResult.ok, failures: verdictResult.failures }, null, 2)
 }
 
 /* ------------------------------------------------------------------ sarif */
@@ -85,7 +92,8 @@ export const RULE_META = {
 }
 
 /** SARIF 2.1.0 — one run, one rule per finding type, one result per finding. */
-export function sarifReport(result, _verdictResult, { toolVersion = '0.0.0' } = {}) {
+export function sarifReport(rawResult, _verdictResult, { toolVersion = '0.0.0' } = {}) {
+  const result = withFixHints(rawResult)
   const findings = []
   for (const l of result.languages) {
     for (const n of l.namespaces) {
@@ -121,7 +129,7 @@ export function sarifReport(result, _verdictResult, { toolVersion = '0.0.0' } = 
           ruleId: f.type,
           ruleIndex: ruleIndex[f.type],
           level: f.severity === 'error' ? 'error' : 'warning',
-          message: { text: `[${f.lang}] ${f.path}: ${f.message}` },
+          message: { text: `[${f.lang}] ${f.path}: ${f.message}${f.fix ? ` Fix: ${f.fix}.` : ''}` },
           locations: [
             {
               physicalLocation: {

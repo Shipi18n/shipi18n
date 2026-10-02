@@ -32,4 +32,5 @@ export { anthropicAdapter, openaiAdapter, resolveAdapter } from './adapters/inde
 export { humanReport, jsonReport, sarifReport, junitReport, REPORTERS, RULE_META, verdict } from './reporters.js'
 // Adoption hardening (2.10.0): baseline ("fail only on new"), per-rule severity,
 // suppression. Applied after the check and before `verdict`.
-export { applyPolicy, buildBaseline, findingFingerprint, parseSeverity, SEVERITY_LEVELS } from './policy.js'
+export { applyPolicy, buildBaseline, filterChanged, findingFingerprint, parseSeverity, SEVERITY_LEVELS } from './policy.js'
+export { fixHints, withFixHints } from './fixhints.js'

@@ -35,9 +35,19 @@ ${chalk.gray('https://github.com/Shipi18n/shipi18n')}
 `
   )
 
+// Usage errors exit 2, never 1: 1 means "findings", and a script or AI agent
+// branches on that. Commander's own default for a bad flag is 1. Set before the
+// subcommands are added — they copy this setting when created.
+program.exitOverride()
+
 translateCommand(program)
 checkCommand(program)
 lockCommand(program)
 wpSyncCommand(program)
-program.parse(process.argv)
+try {
+  program.parse(process.argv)
+} catch (err) {
+  const ok = ['commander.helpDisplayed', 'commander.help', 'commander.version'].includes(err.code)
+  process.exit(ok ? 0 : 2)
+}
 if (!process.argv.slice(2).length) program.outputHelp()

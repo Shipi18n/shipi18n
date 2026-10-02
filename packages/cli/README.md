@@ -112,9 +112,24 @@ and unbalanced quotes (the `values-fr/strings.xml` AAPT build breaker).
 | `--detect-secrets` | — | Flag secrets/PII (API keys, private keys, emails, cards) in locale strings |
 | `--fail-on <level>` | `error` | `error` \| `warning` \| `none` |
 | `--min-coverage <pct>` | — | Fail any language below this coverage |
+| `--changed-only [ref]` | `HEAD` | Report only locale files changed vs a git ref, including uncommitted and untracked ones. If the source file changed, every locale is checked |
 
-Exit codes: `0` pass, `1` findings at the fail level, `2` usage error. Errors may fail CI; warnings
-never do by default — a warning that blocks PRs gets the tool uninstalled.
+Exit codes: `0` pass, `1` findings at the fail level, `2` usage error (bad flag, unknown command,
+missing input, not a git repo for `--changed-only`). A bad flag never exits `1`, so `1` always means
+"the translations have problems". Errors may fail CI; warnings never do by default — a warning that
+blocks PRs gets the tool uninstalled.
+
+### For AI coding agents
+
+After writing or editing locale files, run the check on just what changed and fix until it exits `0`:
+
+```bash
+npx @shipi18n/cli check ./locales -s en --changed-only --json
+```
+
+Every finding in the JSON (and SARIF) output carries a one-line `fix`, e.g. a translated variable
+name reports `"fix": "rename {cuenta} to {count}"`. Exit `1` means fix and re-run; `2` means the
+command itself is wrong.
 
 ### Adopting on a messy catalog — baseline & severity
 
@@ -190,7 +205,7 @@ runs the Docker image, so **no Node is required**:
 ```yaml
 repos:
   - repo: https://github.com/Shipi18n/shipi18n
-    rev: v2.11.7
+    rev: v2.12.0
     hooks:
       - id: shipi18n-check
         # args: ['check', './i18n', '-s', 'en']   # if not ./locales
@@ -205,7 +220,7 @@ repos:
       - id: shipi18n-check
         name: shipi18n check
         language: node
-        additional_dependencies: ['@shipi18n/cli@2.11.7']
+        additional_dependencies: ['@shipi18n/cli@2.12.0']
         entry: shipi18n check ./locales -s en
         pass_filenames: false
         files: '\.(json|ya?ml|po|xlf|xliff|xml|arb|xcstrings)$'

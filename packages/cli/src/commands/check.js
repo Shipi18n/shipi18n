@@ -12,6 +12,7 @@
  * and XLIFF (`.xlf`/`.xliff`, 1.2 & 2.0). Reporters: human, json, sarif, junit.
  */
 import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
 import { resolve, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import chalk from 'chalk'
@@ -28,6 +29,7 @@ import {
   buildBaseline,
   parseSeverity,
   scanResultSecrets,
+  filterChanged,
 } from '@shipi18n/core'
 import { REPORTERS } from '../reporters.js'
 import { locksFor, DEFAULT_LOCKS_PATH } from './lock.js'
@@ -51,6 +53,29 @@ export { verdict }
 
 /* ---------------------------------------------------------------- command */
 
+/**
+ * Files changed relative to `ref` (default HEAD): tracked changes, staged or not,
+ * plus untracked files — what an agent has just written. Absolute paths.
+ * Throws with a readable message outside a git repo or on an unknown ref.
+ */
+export function gitChangedFiles(ref = 'HEAD', cwd = process.cwd()) {
+  const git = (...args) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
+  let top
+  try {
+    top = git('rev-parse', '--show-toplevel').trim()
+  } catch {
+    throw new Error('--changed-only needs a git repository')
+  }
+  let diff
+  try {
+    diff = git('diff', '--name-only', ref, '--')
+  } catch {
+    throw new Error(`--changed-only: unknown git ref '${ref}'`)
+  }
+  const untracked = git('ls-files', '--others', '--exclude-standard', '--full-name')
+  return [...diff.split('\n'), ...untracked.split('\n')].filter(Boolean).map((f) => resolve(top, f))
+}
+
 export function checkCommand(program) {
   program
     .command('check [input]')
@@ -66,6 +91,7 @@ export function checkCommand(program) {
     .option('--write-baseline', 'Snapshot current findings into --baseline (default .shipi18n/baseline.json) and exit')
     .option('--fail-on <level>', 'Exit non-zero on: error | warning | none', 'error')
     .option('--min-coverage <pct>', 'Fail any language below this coverage percentage', parseFloat)
+    .option('--changed-only [ref]', 'Only report locale files changed vs a git ref (default HEAD, includes uncommitted and untracked). A changed source file checks everything')
     .option('--detect-secrets', 'Flag secrets/PII (API keys, private keys, emails, cards) sitting in locale strings')
     .option('--glossary <file>', 'Glossary JSON: DNT terms + locked per-language translations (deterministic)')
     .option('--semantic', 'Add the LLM-as-judge pass (BYO key; advisory warnings by default)')
@@ -107,6 +133,25 @@ export function checkCommand(program) {
         console.error(chalk.red(`Error: ${err.message}`))
         process.exitCode = 2
         return
+      }
+
+      if (opts.changedOnly) {
+        let changed
+        try {
+          changed = gitChangedFiles(opts.changedOnly === true ? 'HEAD' : opts.changedOnly)
+        } catch (err) {
+          console.error(chalk.red(`Error: ${err.message}`))
+          process.exitCode = 2
+          return
+        }
+        const r = filterChanged(result, changed)
+        console.error(
+          chalk.gray(
+            r.sourceChanged
+              ? 'changed-only: the source changed, so every locale is checked'
+              : `changed-only: ${r.kept} locale(s) with changed files`
+          )
+        )
       }
 
       if (opts.detectSecrets) {
