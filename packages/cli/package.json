@@ -1,6 +1,6 @@
 {
   "name": "@shipi18n/cli",
-  "version": "2.12.0",
+  "version": "2.12.1",
   "description": "Catch broken translations before you ship: dropped placeholders, missing keys, collapsed plurals and — with your own LLM key — mistranslations the structure checks cannot see. CI-ready (SARIF, JUnit, exit codes). Translates too.",
   "type": "module",
   "bin": {
@@ -22,26 +22,34 @@
     "test": "NODE_OPTIONS='--experimental-vm-modules' jest --passWithNoTests"
   },
   "keywords": [
-    "sarif",
-    "ci",
-    "lint",
+    "i18n",
+    "l10n",
+    "localization",
+    "translation",
     "translation-quality",
     "i18n-qa",
-    "i18n",
-    "cli",
-    "translation",
-    "llm",
-    "openai",
-    "anthropic",
-    "localization",
-    "bring-your-own-key",
     "linter",
+    "lint",
+    "check",
+    "ci",
+    "sarif",
     "icu",
     "i18next",
-    "l10n",
-    "check"
+    "placeholder",
+    "interpolation",
+    "missing-keys",
+    "plural",
+    "gettext",
+    "xliff",
+    "android-strings",
+    "xcstrings",
+    "arb",
+    "ai-translation"
   ],
   "license": "Apache-2.0",
+  "engines": {
+    "node": ">=18"
+  },
   "author": "Shipi18n",
   "repository": {
     "type": "git",

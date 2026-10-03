@@ -1,5 +1,10 @@
 # @shipi18n/core
 
+## 2.12.1
+
+- The missing-SDK error now says `npx @shipi18n/cli <command>` (it runs the local copy once installed), so
+  no instruction points at the unscoped `shipi18n` name, which is now an empty placeholder. Adds `engines` (Node >= 18).
+
 ## 2.12.0
 
 - **Fix hints.** Every finding in the human, JSON and SARIF reports carries a one-line `fix` (`withFixHints`,

@@ -19,7 +19,7 @@ CLI, so install both:
 ```bash
 npm i -D @shipi18n/cli @anthropic-ai/sdk   # or `openai`
 export ANTHROPIC_API_KEY=sk-ant-...
-npx shipi18n check ./locales -s en --semantic
+npx @shipi18n/cli check ./locales -s en --semantic
 ```
 
 An LLM reads each source/translation pair and reports mistranslations, omissions and additions —
@@ -32,53 +32,6 @@ advisory by default, so it never fails your build unless you ask it to.
 **Measured** on a 228-pair corpus committed before the judge was written: **100% of planted errors
 caught, 7.1% false positives.** Full harness in the repo under `evals/semantic/` — run it against
 your own model.
-
-## Translating
-
-```bash
-npm i -g @shipi18n/cli @anthropic-ai/sdk   # or add `openai` for the OpenAI provider
-export ANTHROPIC_API_KEY=sk-ant-...
-shipi18n translate en.json --target es,fr,de
-```
-
-Writes `es.json`, `fr.json`, `de.json` into the output directory (default `./locales`), preserving
-structure and placeholders.
-
-## Usage
-
-```bash
-shipi18n translate <input> --target <langs> [options]
-
-Options:
-  -t, --target <langs>     Comma-separated target language codes (default: es,fr)
-  -s, --source <language>  Source language code (default: en)
-  -o, --output <dir>       Output directory (default: ./locales)
-  -p, --provider <name>    LLM provider: anthropic (default) or openai
-      --api-key <key>      LLM API key (else ANTHROPIC_API_KEY / OPENAI_API_KEY env)
-      --model <model>      Override the provider's default model
-      --base-url <url>     OpenAI-compatible endpoint (Ollama, Gemini compat, ...); needs -p openai
-  -i, --incremental        Reuse existing output files; only translate new/missing keys
-```
-
-## Examples
-
-```bash
-# Anthropic (default), multiple languages
-shipi18n translate locales/en.json -t es,fr,ja
-
-# OpenAI provider
-shipi18n translate en.json -p openai -t de --api-key $OPENAI_API_KEY
-
-# Incremental — only translate keys not already in the target file
-shipi18n translate en.json -t es --incremental
-
-# Ollama — fully local, no API key at all (any OpenAI-compatible server works)
-shipi18n translate en.json -p openai --base-url http://localhost:11434/v1 --model llama3.2 -t es
-
-# Google Gemini, via its OpenAI-compatible endpoint
-shipi18n translate en.json -p openai --base-url https://generativelanguage.googleapis.com/v1beta/openai/ \
-  --model gemini-2.5-flash --api-key $GEMINI_API_KEY -t es
-```
 
 ## Check — validate translations in CI (no LLM, no key)
 
@@ -164,6 +117,9 @@ or `off` (dropped entirely). Example: `--severity 'untranslated=off,empty-value=
     sarif_file: i18n.sarif
 ```
 
+Or use the action, which bundles the same check with `severity` and `baseline` inputs:
+`uses: Shipi18n/shipi18n-github-action@v3` ([setup](https://shipi18n.com/docs/github-action/setup)).
+
 ### No Node? Run the check in any CI with Docker
 
 GitHub runners already have Node — the [Action](https://github.com/Shipi18n/shipi18n-github-action) is
@@ -205,7 +161,7 @@ runs the Docker image, so **no Node is required**:
 ```yaml
 repos:
   - repo: https://github.com/Shipi18n/shipi18n
-    rev: v2.12.0
+    rev: v2.12.1
     hooks:
       - id: shipi18n-check
         # args: ['check', './i18n', '-s', 'en']   # if not ./locales
@@ -220,7 +176,7 @@ repos:
       - id: shipi18n-check
         name: shipi18n check
         language: node
-        additional_dependencies: ['@shipi18n/cli@2.12.0']
+        additional_dependencies: ['@shipi18n/cli@2.12.1']
         entry: shipi18n check ./locales -s en
         pass_filenames: false
         files: '\.(json|ya?ml|po|xlf|xliff|xml|arb|xcstrings)$'
@@ -352,6 +308,53 @@ npx @shipi18n/cli lock ./locales --relock
 ```
 
 A missing or corrupt lock file is a cold start, not a crash.
+
+## Translating (optional, your own LLM key)
+
+```bash
+npm i -g @shipi18n/cli @anthropic-ai/sdk   # or add `openai` for the OpenAI provider
+export ANTHROPIC_API_KEY=sk-ant-...
+shipi18n translate en.json --target es,fr,de
+```
+
+Writes `es.json`, `fr.json`, `de.json` into the output directory (default `./locales`), preserving
+structure and placeholders.
+
+### Translate options
+
+```bash
+shipi18n translate <input> --target <langs> [options]
+
+Options:
+  -t, --target <langs>     Comma-separated target language codes (default: es,fr)
+  -s, --source <language>  Source language code (default: en)
+  -o, --output <dir>       Output directory (default: ./locales)
+  -p, --provider <name>    LLM provider: anthropic (default) or openai
+      --api-key <key>      LLM API key (else ANTHROPIC_API_KEY / OPENAI_API_KEY env)
+      --model <model>      Override the provider's default model
+      --base-url <url>     OpenAI-compatible endpoint (Ollama, Gemini compat, ...); needs -p openai
+  -i, --incremental        Reuse existing output files; only translate new/missing keys
+```
+
+### Translate examples
+
+```bash
+# Anthropic (default), multiple languages
+shipi18n translate locales/en.json -t es,fr,ja
+
+# OpenAI provider
+shipi18n translate en.json -p openai -t de --api-key $OPENAI_API_KEY
+
+# Incremental — only translate keys not already in the target file
+shipi18n translate en.json -t es --incremental
+
+# Ollama — fully local, no API key at all (any OpenAI-compatible server works)
+shipi18n translate en.json -p openai --base-url http://localhost:11434/v1 --model llama3.2 -t es
+
+# Google Gemini, via its OpenAI-compatible endpoint
+shipi18n translate en.json -p openai --base-url https://generativelanguage.googleapis.com/v1beta/openai/ \
+  --model gemini-2.5-flash --api-key $GEMINI_API_KEY -t es
+```
 
 ## Bring your own LLM
 

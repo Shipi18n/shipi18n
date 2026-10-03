@@ -1,5 +1,10 @@
 # @shipi18n/cli
 
+## 2.12.1
+
+- npm page: check documentation first, translation last; keywords describe the check (placeholder,
+  interpolation, plural, gettext, xliff, xcstrings, arb, android-strings…); `engines` (Node >= 18). No behavior change.
+
 ## 2.12.0
 
 - **Built for AI coding agents:** after writing locale files an agent runs
