@@ -1,5 +1,17 @@
 # @shipi18n/core
 
+## 2.12.2
+
+Three false-positive classes found by refill scan #2 (npmx.dev, unifideck, nametag):
+
+- **FP#16 — more pipe forms than the source.** Apps can define their own vue-i18n `pluralRules` (npmx.dev:
+  Arabic 6 forms, Polish 5, Czech 3). `plural-forms` now accepts a translation with more forms than the source
+  while the count fits the language's CLDR categories, plus one zero form for count-based plurals
+  (`{count}`/`{n}`). A garbled string with a moved separator in a 2-category language is still an error.
+- **FP#17 — translator notes.** Keys like `_comment`, `_note`, `_description`, `_context` are skipped.
+- **FP#18 — `=1` covers `one`.** An ICU plural with `=1 {…}` no longer warns about a missing `one` category in
+  languages where `one` only ever means 1 (German, Spanish…). Russian `=1` still warns: 21, 31… are `one` too.
+
 ## 2.12.1
 
 - The missing-SDK error now says `npx @shipi18n/cli <command>` (it runs the local copy once installed), so

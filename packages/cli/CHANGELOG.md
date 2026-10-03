@@ -1,5 +1,10 @@
 # @shipi18n/cli
 
+## 2.12.2
+
+- Picks up `@shipi18n/core@2.12.2`: fewer false positives on apps with custom plural rules, translator-note
+  keys and ICU `=1` selectors.
+
 ## 2.12.1
 
 - npm page: check documentation first, translation last; keywords describe the check (placeholder,
