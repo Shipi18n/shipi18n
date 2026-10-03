@@ -286,11 +286,18 @@ export function checkTranslations({ source, target, targetLang = 'target', gloss
       pluralFormCount(t) > srcForms &&
       pluralFormCount(t) <= pluralCategoryCount(targetLang) + (countsWithCountArg(s) ? 1 : 0)
     if (PIPE_PLURAL_GRAMMARS.has(format) && looksLikePipePlural(s) && pluralFormCount(t) !== srcForms && !singleFormOk && !moreFormsOk) {
+      // One form that still carries the right variables is a simplification
+      // ("{count} dependencias más" for every count): grammatically off for some
+      // counts, but nothing breaks, so it warns. One form holding both sentences is
+      // the separator lost (nocodb "… <unk> …"): both render together, an error.
+      const simplified = pluralFormCount(t) === 1 && !isMergedPlural(s, t)
       findings.push({
         type: 'plural-forms',
-        severity: 'error',
+        severity: simplified ? 'warning' : 'error',
         path,
-        message: `source has ${srcForms} plural forms ('|'), ${targetLang} has ${pluralFormCount(t)}`,
+        message: simplified
+          ? `source has ${srcForms} plural forms ('|'), ${targetLang} uses one form for every count`
+          : `source has ${srcForms} plural forms ('|'), ${targetLang} has ${pluralFormCount(t)}`,
         source: s,
         translation: t,
       })

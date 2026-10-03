@@ -51,13 +51,13 @@ describe('checkTranslations', () => {
     })
   })
 
-  test('collapsed vue-i18n pipe plural is an error', () => {
+  test('a vue-i18n pipe plural collapsed to one form is reported (warning: a simplification, nothing merged)', () => {
     const r = checkTranslations({
       source: { items: 'You have {count} item | You have {count} items' },
       target: { items: 'Tienes {count} elementos' },
       targetLang: 'es',
     })
-    expect(byType(r, 'plural-forms')[0]).toMatchObject({ path: 'items', severity: 'error' })
+    expect(byType(r, 'plural-forms')[0]).toMatchObject({ path: 'items', severity: 'warning' })
   })
 
   test('a literal pipe in prose (SEO title) is NOT treated as a plural', () => {
