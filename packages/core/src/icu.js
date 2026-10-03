@@ -32,6 +32,7 @@ function analyze(ast, acc) {
           arg: n.value,
           ordinal: n.pluralType === 'ordinal',
           categories: Object.keys(n.options).filter((k) => !k.startsWith('=')),
+          exact: Object.keys(n.options).filter((k) => k.startsWith('=')).map((k) => Number(k.slice(1))),
         })
       }
       for (const opt of Object.values(n.options)) analyze(opt.value, acc)
@@ -62,6 +63,23 @@ function requiredCategories(lang, ordinal) {
     return [...cats]
   } catch {
     return null // unknown/invalid locale tag — skip the category check
+  }
+}
+
+/**
+ * FP#18: an exact selector covers a category when it lists every integer that
+ * category ever applies to. German `one` is only ever 1, so `=1 {…}` already
+ * handles it; Russian `one` is 1, 21, 31…, so `=1` alone does not.
+ */
+function coveredByExact(lang, ordinal, category, exact) {
+  if (!exact.length) return false
+  try {
+    const pr = new Intl.PluralRules(lang.replace(/_/g, '-'), { type: ordinal ? 'ordinal' : 'cardinal' })
+    const ints = []
+    for (let n = 0; n <= 200; n++) if (pr.select(n) === category) ints.push(n)
+    return ints.length > 0 && ints.every((n) => exact.includes(n))
+  } catch {
+    return false
   }
 }
 
@@ -119,7 +137,9 @@ export function checkICU(source, translation, targetLang, path) {
   for (const p of tr.plurals) {
     const required = requiredCategories(targetLang, p.ordinal)
     if (!required) continue
-    const missingCats = required.filter((c) => !p.categories.includes(c))
+    const missingCats = required.filter(
+      (c) => !p.categories.includes(c) && !coveredByExact(targetLang, p.ordinal, c, p.exact || [])
+    )
     if (missingCats.length)
       findings.push({
         type: 'plural-category',

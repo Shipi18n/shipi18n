@@ -38,6 +38,32 @@ function hasSinglePluralCategory(lang) {
     return false
   }
 }
+// FP#16: an app can define its own pluralRules (vue-i18n `pluralRules`), giving a
+// language more pipe forms than English has — npmx.dev: Arabic 6, Czech 3. More
+// forms than the source is fine while it fits the language's CLDR plural
+// categories — or one more for vue-i18n's zero form, which only exists for
+// count-based plurals ({count}/{n} in the source): npmx pl "{count} odpowiedzi |
+// {count} odpowiedź | …" (zero + one/few/many/other = 5). A blanket +1 hid nocodb's
+// Basque string, whose source counts with {inserted}/{failed}: 3 garbled forms for
+// a 2-category language, still flagged.
+function pluralCategoryCount(lang) {
+  const tag = String(lang).replace(/_/g, '-')
+  try {
+    // The full CLDR set, fractions included: npmx's Polish rules use one/few/many/other
+    // (+ a zero form = 5), and `other` there only ever fires for non-integers.
+    return new Intl.PluralRules(LANG_ALIASES[tag.toLowerCase()] || tag).resolvedOptions().pluralCategories.length
+  } catch {
+    return 0
+  }
+}
+
+// FP#17: keys like `_comment` carry notes for translators, not UI text
+// (unifideck's captureLogs._comment was flagged in 15 locales).
+const COUNT_ARG = /\{\s*(count|n)\s*\}/
+const countsWithCountArg = (s) => COUNT_ARG.test(s)
+
+const isMetaKey = (path) => /(^|\.)_(comment|comments|note|notes|description|desc|context|meta|todo|doc|docs)$/i.test(path)
+
 const placeholderCount = (str) => (String(str).match(/\{[^{}]+\}/g) || []).length
 const isMergedPlural = (s, t) =>
   placeholderCount(t) > Math.max(...String(s).split('|').map(placeholderCount))
@@ -145,6 +171,7 @@ export function checkTranslations({ source, target, targetLang = 'target', gloss
   const tgtSet = new Set(tgtKeys)
 
   for (const path of srcKeys) {
+    if (isMetaKey(path)) continue
     if (!tgtSet.has(path)) {
       findings.push({
         type: 'missing-key',
@@ -255,7 +282,10 @@ export function checkTranslations({ source, target, targetLang = 'target', gloss
     const srcForms = pluralFormCount(s)
     const singleFormOk =
       pluralFormCount(t) === 1 && hasSinglePluralCategory(targetLang) && !isMergedPlural(s, t)
-    if (PIPE_PLURAL_GRAMMARS.has(format) && looksLikePipePlural(s) && pluralFormCount(t) !== srcForms && !singleFormOk) {
+    const moreFormsOk =
+      pluralFormCount(t) > srcForms &&
+      pluralFormCount(t) <= pluralCategoryCount(targetLang) + (countsWithCountArg(s) ? 1 : 0)
+    if (PIPE_PLURAL_GRAMMARS.has(format) && looksLikePipePlural(s) && pluralFormCount(t) !== srcForms && !singleFormOk && !moreFormsOk) {
       findings.push({
         type: 'plural-forms',
         severity: 'error',
@@ -281,6 +311,7 @@ export function checkTranslations({ source, target, targetLang = 'target', gloss
   }
 
   for (const path of tgtKeys) {
+    if (isMetaKey(path)) continue
     if (!srcSet.has(path)) {
       findings.push({
         type: 'orphan-key',
