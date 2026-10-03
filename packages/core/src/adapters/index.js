@@ -24,7 +24,7 @@ function missingSdkError(provider, sdk) {
   return new Error(
     `The '${provider}' provider requires the '${sdk}' package.\n` +
       `  Install it next to the CLI:  npm i -D @shipi18n/cli ${sdk}\n` +
-      `  then run:                    npx shipi18n <command>\n` +
+      `  then run:                    npx @shipi18n/cli <command>   (uses that local copy)\n` +
       `  If you ran 'npx @shipi18n/cli', installing ${sdk} on its own will not help — ` +
       `that copy of the CLI cannot see your project's node_modules.`
   )

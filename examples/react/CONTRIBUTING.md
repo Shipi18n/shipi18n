@@ -171,7 +171,7 @@ export default function YourExample() {
 
 - Node.js 18+
 - npm or yarn
-- A Shipi18n API key (for testing)
+- Your own Anthropic or OpenAI key, only to test translation (checks need no key)
 
 ### Local Development
 

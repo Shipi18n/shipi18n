@@ -153,7 +153,7 @@ Earlier versions of this example used `@shipi18n/api` with a `SHIPI18N_API_KEY` 
 | v1 | v2 |
 | --- | --- |
 | `new Shipi18n({ apiKey })` | `translateJSON({ ..., provider, apiKey })` |
-| `SHIPI18N_API_KEY` | `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` |
+| `SHIPI18N_API_KEY` (retired) | `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` |
 | `targetLanguages: ['es','fr']` | one `to` per call — loop for several |
 | returns `{ es: {...}, fr: {...} }` | returns `{ result, stats }` |
 

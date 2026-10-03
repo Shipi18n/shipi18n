@@ -12,6 +12,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  stale-strings:
+    # Copy from the retired hosted product must not come back (docs/canonical.md has the current wording).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: node scripts/check-stale-strings.mjs
+
   test:
     name: test (node ${{ matrix.node }})
     runs-on: ubuntu-latest

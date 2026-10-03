@@ -66,7 +66,7 @@ alongside the CLI:
 ```bash
 npm i -D @shipi18n/cli @anthropic-ai/sdk       # or `openai`
 export ANTHROPIC_API_KEY=sk-ant-...            # or OPENAI_API_KEY
-npx shipi18n check ./locales -s en --semantic
+npx @shipi18n/cli check ./locales -s en --semantic
 ```
 
 An LLM reads each pair and reports mistranslations, omissions and additions:
@@ -98,8 +98,8 @@ to the provider you chose.
 | [`@shipi18n/core`](packages/core) | The engine: translation checks, the semantic judge, placeholder validation — plus provider-agnostic, structure-preserving translation with incremental mode. |
 | [`@shipi18n/cli`](packages/cli) | `shipi18n check ./locales` for CI, `--semantic` for meaning, `lock` to protect hand-edits, `translate` when you need it. |
 | [`@shipi18n/mcp`](packages/mcp) | MCP server — check, diff and review locale files from Claude Desktop, Cursor, or any MCP client. Validation needs **no API key**. |
-| [`vite-plugin-shipi18n`](packages/vite-plugin) | Vite plugin that translates locale files at build time, with caching. |
-| [`shipi18n-github-action`](packages/github-action) | GitHub Action that keeps translations in sync on push/PR. |
+| [`vite-plugin-shipi18n`](packages/vite-plugin) | Vite plugin that translates locale files at build time with your own LLM key, with caching. |
+| [`shipi18n-github-action`](https://github.com/Shipi18n/shipi18n-github-action) | Check locale files on every PR (no key, SARIF annotations); optional BYO-key retranslate. |
 
 ## Why
 
@@ -202,7 +202,7 @@ with your key, your model, and nothing in between.
 ```bash
 npm i -D @shipi18n/cli @anthropic-ai/sdk       # or `openai`
 export ANTHROPIC_API_KEY=sk-ant-...            # or OPENAI_API_KEY
-npx shipi18n translate locales/en.json -t es,fr,de
+npx @shipi18n/cli translate locales/en.json -t es,fr,de
 ```
 
 ```
