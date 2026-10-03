@@ -26,6 +26,7 @@ const RULES = [
   [/\b0% error/i, 'retired marketing claim'],
   [/Get Started Free/i, 'retired SaaS call to action'],
   [/All rights reserved/i, 'the project is Apache-2.0'],
+  [/marketplace\/actions\/shipi18n-auto-translate/, 'old Marketplace slug (404); use /marketplace/actions/shipi18n-i18n-check'],
 ]
 // A line explaining the retirement is the fix, not the problem.
 const HISTORY = /retired|deprecated|shut down|no longer|earlier version|earlier versions|v1 (?:called|used)|there is no|is not|was a|were a|stale-strings: ok/i
