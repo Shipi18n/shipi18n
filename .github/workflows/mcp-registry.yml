@@ -1,10 +1,18 @@
 # Publish server.json to the official MCP Registry.
-# Runs on manual dispatch. Auth is GitHub Actions OIDC: a workflow in this org
-# repo is inherently allowed to publish io.github.Shipi18n/* — no user OAuth
-# token, no org third-party-app approval needed.
+# Runs on every v* tag (skips when the registry already lists this version) and on
+# manual dispatch. Auth is GitHub Actions OIDC: a workflow in this org repo is
+# inherently allowed to publish io.github.Shipi18n/* — no user OAuth token, no org
+# third-party-app approval needed.
+#
+# History: this was dispatch-only, and the registry sat at 2.1.1 while npm shipped
+# 2.3.0 (found 2026-10-03). packages/mcp/src/__tests__/server-json.test.js now fails
+# the build if server.json drifts from the package; this workflow keeps the
+# registry in step with server.json.
 name: mcp-registry
 
 on:
+  push:
+    tags: ['v*']
   workflow_dispatch:
 
 permissions:
@@ -16,10 +24,40 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Decide whether the registry needs this version
+        id: need
+        run: |
+          set -euo pipefail
+          want=$(node -p "require('./server.json').version")
+          have=$(curl -fsSL 'https://registry.modelcontextprotocol.io/v0/servers?search=io.github.Shipi18n/shipi18n' \
+            | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{const s=JSON.parse(d).servers||[];const v=s.map(x=>x.server).filter(x=>x.name==='io.github.Shipi18n/shipi18n').map(x=>x.version);console.log(v.includes('$want')?'$want':(v[0]||'none'))})")
+          echo "server.json $want, registry has $have"
+          if [ "$have" = "$want" ]; then echo "publish=false" >> "$GITHUB_OUTPUT"; else echo "publish=true" >> "$GITHUB_OUTPUT"; fi
+          echo "version=$want" >> "$GITHUB_OUTPUT"
+
+      # The registry validates the npm package (and its mcpName), so on a tag it
+      # must wait for publish.yml to finish putting @shipi18n/mcp on npm.
+      - name: Wait for @shipi18n/mcp on npm
+        if: steps.need.outputs.publish == 'true'
+        run: |
+          ver="${{ steps.need.outputs.version }}"
+          for i in $(seq 1 150); do
+            if curl -fsSL -H 'Cache-Control: no-cache' https://registry.npmjs.org/@shipi18n%2Fmcp \
+                | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>process.exit(JSON.parse(d).versions?.['$ver']?0:1))"; then
+              echo "npm is serving @shipi18n/mcp@$ver"; exit 0
+            fi
+            echo "waiting for @shipi18n/mcp@$ver on npm ($i/150)…"; sleep 8
+          done
+          echo "timed out after 20m waiting for @shipi18n/mcp@$ver"; exit 1
+
       - name: Install mcp-publisher
+        if: steps.need.outputs.publish == 'true'
         run: |
           curl -sL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/').tar.gz" | tar xz mcp-publisher
+
       - name: Publish to registry
+        if: steps.need.outputs.publish == 'true'
         run: |
           ./mcp-publisher login github-oidc
           ./mcp-publisher publish

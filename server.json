@@ -1,31 +1,31 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.Shipi18n/shipi18n",
-  "description": "Translation QA for locale files: keyless validators, semantic review and BYO-key translation",
+  "description": "Check locale files for broken placeholders, plurals and missing keys. Validators need no API key.",
   "repository": {
     "url": "https://github.com/Shipi18n/shipi18n",
     "source": "github"
   },
-  "version": "2.1.1",
+  "version": "2.3.0",
   "websiteUrl": "https://shipi18n.com",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@shipi18n/mcp",
-      "version": "2.1.1",
+      "version": "2.3.0",
       "transport": {
         "type": "stdio"
       },
       "environmentVariables": [
         {
-          "description": "Optional \u2014 used only by the translate tools; all validator tools run with no API key",
+          "description": "Optional — used only by the translate tools; all validator tools run with no API key",
           "isRequired": false,
           "format": "string",
           "isSecret": true,
           "name": "ANTHROPIC_API_KEY"
         },
         {
-          "description": "Optional \u2014 alternative provider key for the translate tools",
+          "description": "Optional — alternative provider key for the translate tools",
           "isRequired": false,
           "format": "string",
           "isSecret": true,
