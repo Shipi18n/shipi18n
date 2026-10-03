@@ -1,5 +1,10 @@
 # @shipi18n/cli
 
+## 2.13.0
+
+- Picks up `@shipi18n/core@2.13.0`: a plural collapsed to a single form that keeps its variables is now a
+  warning; merged or miscounted forms stay errors.
+
 ## 2.12.2
 
 - Picks up `@shipi18n/core@2.12.2`: fewer false positives on apps with custom plural rules, translator-note

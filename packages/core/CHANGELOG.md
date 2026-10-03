@@ -1,5 +1,14 @@
 # @shipi18n/core
 
+## 2.13.0
+
+- **A plural collapsed to one form is a warning, not an error,** when that one form keeps the source's variables
+  ("{count} dependencias más" for every count): grammatically off for some counts, nothing breaks. It is still
+  an **error** when the single form holds both sentences — the separator lost, as in nocodb's 182 strings with
+  `<unk>` / `●` / `＋` — and when the number of forms is wrong in any other way. The message says which:
+  "uses one form for every count" vs "has N". To keep failing CI on simplifications:
+  `--severity 'plural-forms=error'`.
+
 ## 2.12.2
 
 Three false-positive classes found by refill scan #2 (npmx.dev, unifideck, nametag):
