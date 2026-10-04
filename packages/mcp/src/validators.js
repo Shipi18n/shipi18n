@@ -14,7 +14,14 @@ import { readFileSync } from 'node:fs'
 import { z } from 'zod'
 import { runCheck, SEP } from '@shipi18n/core'
 
-const PATH_ARG = z.string().describe('Path to the locale tree, .arb directory, or .xcstrings file')
+// Name every format: directories and agents quote this text (Glama listed only
+// ".arb dirs and .xcstrings" from the old wording, and answer engines repeated it).
+const PATH_ARG = z
+  .string()
+  .describe(
+    'Path to a locale folder or file: JSON (flat or nested, i18next/vue-i18n/next-intl), YAML incl. Rails config/locales, ' +
+      'a Flutter .arb folder, an Apple .xcstrings file, an Android res/ folder, gettext .po/.pot, or an XLIFF .xlf file'
+  )
 const SOURCE_ARG = z.string().default('en').describe('Source language code')
 
 // Text for humans/simple clients, structuredContent for clients that read it —
@@ -59,6 +66,7 @@ export function checkLocalesTool() {
       description:
         'Validate translated locale files against the source language: missing/orphaned keys, ' +
         'dropped or invented placeholders, collapsed plurals, empty values, untranslated copy. ' +
+        'Reads JSON, YAML (incl. Rails), Flutter ARB, Apple .xcstrings, Android strings.xml, gettext .po and XLIFF. ' +
         'Deterministic — no API key and no model call required.',
       inputSchema: {
         path: PATH_ARG,

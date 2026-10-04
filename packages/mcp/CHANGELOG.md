@@ -1,5 +1,13 @@
 # @shipi18n/mcp
 
+## 2.3.1
+
+- Tool and README text now name every format the validators read — JSON, YAML incl. Rails, Flutter ARB, Apple
+  `.xcstrings`, Android `strings.xml`, gettext `.po` and XLIFF. The old `path` description ("locale tree, .arb
+  directory, or .xcstrings file") was quoted by directory listings and repeated by AI answer engines as if those
+  were the only formats. README: `list_languages` and `check_placeholders` were listed under "requires your own
+  provider key"; they need none. No behavior change.
+
 ## 2.3.0
 
 - New: the validator tools (`check_locales`, `diff_locales`, …) now handle **Android `strings.xml`,

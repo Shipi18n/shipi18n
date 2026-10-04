@@ -10,6 +10,10 @@ check, diff and review your locale files straight from any MCP client (Claude De
 **The validation tools need no API key** and make no model call. Translation is also available, with
 your own provider key.
 
+**Formats:** JSON (flat or nested; i18next, vue-i18n, next-intl), YAML including Rails `config/locales`, Flutter
+`.arb`, Apple `.xcstrings`, Android `strings.xml`, gettext `.po`/`.pot` and XLIFF 1.2/2.0 — the same engine as
+[`@shipi18n/cli`](https://www.npmjs.com/package/@shipi18n/cli).
+
 ## Install
 
 [![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_shipi18n-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](vscode:mcp/install?name=shipi18n&config=%7B%22type%22%3A%22stdio%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40shipi18n/mcp%22%5D%7D)
@@ -64,7 +68,7 @@ is already running. Nothing is sent to us, and nothing extra is billed.
 
 | Tool | Description |
 | --- | --- |
-| `check_locales` | Structural QA over a locale tree: missing/orphan keys, dropped placeholders, collapsed plurals, empty values, untranslated copy. |
+| `check_locales` | Structural QA over a locale folder or file (any format above): missing/orphan keys, dropped placeholders, collapsed plurals, empty values, untranslated copy. |
 | `check_glossary` | Enforce do-not-translate terms and locked per-language translations. |
 | `diff_locales` | What still needs translating, per language. |
 | `review_locales` | Returns translation pairs + criteria so **your agent** judges meaning with its own model. |
@@ -77,8 +81,6 @@ is already running. Nothing is sent to us, and nothing extra is billed.
 | --- | --- |
 | `translate_json` | Translate a locale JSON string to one or more languages (returns the translated JSON). |
 | `translate_file` | Read a `.json` locale file, translate it, and write `<lang>.json` files. Supports `incremental`. |
-| `list_languages` | List the language codes/names with friendly names (any BCP-47 code works). |
-| `check_placeholders` | Verify a translation preserves a source string's placeholders (no LLM call). |
 
 All translation tools accept optional `provider` (`anthropic`/`openai`) and `model` arguments to override
 auto-detection.
