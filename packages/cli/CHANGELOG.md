@@ -1,5 +1,9 @@
 # @shipi18n/cli
 
+## 2.14.2
+
+- No changes; released alongside `@shipi18n/mcp@2.3.1` (format list in tool descriptions).
+
 ## 2.14.1
 
 - Picks up `@shipi18n/core@2.14.1`: XLIFF `<x/>` / `<ph/>` inline placeholders (Angular interpolations) are checked.

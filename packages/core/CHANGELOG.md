@@ -1,5 +1,9 @@
 # @shipi18n/core
 
+## 2.14.2
+
+- No changes; released alongside `@shipi18n/mcp@2.3.1` (format list in tool descriptions).
+
 ## 2.14.1
 
 - **XLIFF: empty inline placeholders are checked.** Angular writes every interpolation as
