@@ -1,5 +1,12 @@
 # @shipi18n/core
 
+## 2.14.1
+
+- **XLIFF: empty inline placeholders are checked.** Angular writes every interpolation as
+  `<x id="INTERPOLATION"/>` and XLIFF 2.0 uses `<ph id="0" equiv="…"/>`; having no text, they were invisible, so a
+  target could drop `{{ name }}` and pass. They are now tracked as `{x_INTERPOLATION}` / `{ph_0}`, and the fix hint
+  names the markup (`restore <x id="INTERPOLATION"/>`). Found while verifying the docs' format table.
+
 ## 2.14.0
 
 - No changes; released alongside `@shipi18n/cli@2.14.0` (`init --agents`).

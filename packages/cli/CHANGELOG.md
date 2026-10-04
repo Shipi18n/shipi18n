@@ -1,5 +1,9 @@
 # @shipi18n/cli
 
+## 2.14.1
+
+- Picks up `@shipi18n/core@2.14.1`: XLIFF `<x/>` / `<ph/>` inline placeholders (Angular interpolations) are checked.
+
 ## 2.14.0
 
 - **`shipi18n init --agents`** writes a four-line instruction for AI coding agents into `AGENTS.md` (and into
