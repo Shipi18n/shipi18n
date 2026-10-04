@@ -13,8 +13,11 @@
  *          <unit id="k"><segment state=".."><source/><target/></segment></unit>  (nestable in <group>)
  *
  * Inline placeholder markup (<ph>%s</ph>, <g>, <x/>) is captured by concatenating
- * element text, so a placeholder inside <ph> is still checked. Placeholders that
- * live ONLY in an equiv-text/equivText attribute are a known gap (v1). XML
+ * element text, so a placeholder inside <ph> is still checked. An EMPTY inline
+ * placeholder — Angular's <x id="INTERPOLATION"/>, XLIFF 2.0's <ph id="0" equiv="…"/>
+ * — has no text, so it is represented as {x_INTERPOLATION} / {ph_0}: dropping one
+ * in the target is then a placeholder-missing like any other. (Until 2026-10-04
+ * these were invisible, so an Angular app could drop {{ name }} and pass.) XML
  * entities are decoded; external entities/DTDs are not resolved (no XXE).
  */
 import { XMLParser } from 'fast-xml-parser'
@@ -34,6 +37,9 @@ const parser = new XMLParser({
 const asArray = (v) => (Array.isArray(v) ? v : v == null ? [] : [v])
 const norm = (l) => (typeof l === 'string' && l ? l.replace(/_/g, '-') : null)
 
+// Inline elements that stand for a placeholder (1.2: x, ph, bx, ex; 2.0: ph, sc, ec).
+const INLINE_PLACEHOLDER = new Set(['x', 'ph', 'bx', 'ex', 'sc', 'ec'])
+
 /** Recursively concatenate text, including inline markup like <ph>%s</ph>. */
 function elemText(node) {
   if (node == null) return ''
@@ -42,10 +48,20 @@ function elemText(node) {
   for (const [k, v] of Object.entries(node)) {
     if (k.startsWith('@_')) continue
     if (k === '#text') out += Array.isArray(v) ? v.join('') : String(v)
+    else if (INLINE_PLACEHOLDER.has(k)) for (const el of Array.isArray(v) ? v : [v]) out += inlineText(k, el)
     else if (Array.isArray(v)) out += v.map(elemText).join('')
     else out += elemText(v)
   }
   return out
+}
+
+/** <ph>%s</ph> keeps its text; an empty <x id="INTERPOLATION"/> becomes {x_INTERPOLATION}. */
+function inlineText(tag, el) {
+  const text = elemText(el)
+  if (text.trim()) return text
+  const id = el && typeof el === 'object' ? el['@_id'] ?? el['@_equiv-text'] ?? el['@_equiv'] : undefined
+  // An identifier the placeholder grammars (and ICU) recognise: {x_INTERPOLATION}, {ph_0}.
+  return id != null ? ` {${tag}_${String(id).replace(/[^A-Za-z0-9_]/g, '_')}} ` : ''
 }
 
 // States (either version) that mean "not a finished translation".

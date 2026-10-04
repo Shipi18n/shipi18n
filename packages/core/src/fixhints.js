@@ -7,7 +7,12 @@
  * added reads as "rename {cuenta} to {count}", grammar-agnostic.
  */
 
-const list = (xs) => xs.join(', ')
+// XLIFF empty inline placeholders are tracked as {x_INTERPOLATION}; name the real markup.
+const shown = (ph) => {
+  const m = /^\{(x|ph|bx|ex|sc|ec)_(.+)\}$/.exec(ph)
+  return m ? `<${m[1]} id="${m[2]}"/>` : ph
+}
+const list = (xs) => xs.map(shown).join(', ')
 
 function hint(f, pair) {
   switch (f.type) {

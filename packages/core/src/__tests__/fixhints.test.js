@@ -46,3 +46,8 @@ describe('reporters carry the hint', () => {
     expect(humanReport(r, v).match(/fix: rename/g)).toHaveLength(1)
   })
 })
+
+test('XLIFF inline placeholders are named as markup in the fix', () => {
+  const f = { type: 'placeholder-missing', path: 'k', missing: ['{x_INTERPOLATION}'] }
+  expect(fixHints([f])[0]).toBe('restore <x id="INTERPOLATION"/> exactly as written in the source')
+})
