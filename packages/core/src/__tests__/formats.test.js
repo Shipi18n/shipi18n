@@ -149,15 +149,16 @@ describe('xcstrings adapter (gate S6)', () => {
   test('extra CLDR plural categories are not orphans, but their placeholders are still checked', () => {
     const ru = checkTranslations({ source: parsed.source, target: parsed.languages.ru, targetLang: 'ru' })
     expect(ru.findings.filter((f) => f.type === 'orphan-key')).toHaveLength(0)
-    const adapterDrop = parsed.findings.find(
-      (f) => f.lang === 'ru' && f.type === 'placeholder-missing' && f.path === '%lld files.plural.many'
-    )
-    expect(adapterDrop).toBeDefined()
+    // The adapter passes every category through; the core checks extra forms against `other`.
+    const drop = ru.findings.find((f) => f.type === 'placeholder-missing' && f.path === '%lld files.plural.many')
+    expect(drop).toBeDefined()
+    expect(drop.severity).toBe('error')
   })
 
   test('intact plural variation produces no findings for shared categories', () => {
     const ru = checkTranslations({ source: parsed.source, target: parsed.languages.ru, targetLang: 'ru' })
-    expect(ru.findings.filter((f) => f.path.startsWith('%lld files') && f.severity === 'error')).toHaveLength(0)
+    const shared = ['%lld files.plural.one', '%lld files.plural.other']
+    expect(ru.findings.filter((f) => shared.includes(f.path) && f.severity === 'error')).toHaveLength(0)
   })
 })
 

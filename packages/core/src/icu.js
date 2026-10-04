@@ -55,11 +55,19 @@ const parseICU = (s) => {
  * be pedantic noise. Integer sampling keeps the high-value cases (Russian/
  * Arabic/Polish few·many, reachable at small counts) and drops that noise.
  */
-function requiredCategories(lang, ordinal) {
+// Categories CLDR defines that everyday usage doesn't need. Hebrew `two` is the dual
+// (שעתיים), a lexical option for some nouns: "2 שעות" — numeral + plural, the `other`
+// form — is standard. It was a third of all plural warnings on the 74-repo corpus.
+// Arabic's dual is different: "2 ساعات" is ungrammatical, so Arabic `two` stays required.
+const OPTIONAL_CATEGORIES = { he: ['two'], iw: ['two'] }
+
+export function requiredCategories(lang, ordinal) {
   try {
-    const pr = new Intl.PluralRules(lang.replace(/_/g, '-'), { type: ordinal ? 'ordinal' : 'cardinal' })
+    const tag = lang.replace(/_/g, '-')
+    const pr = new Intl.PluralRules(tag, { type: ordinal ? 'ordinal' : 'cardinal' })
     const cats = new Set(['other']) // ICU always requires `other`
     for (let n = 0; n <= 200; n++) cats.add(pr.select(n))
+    if (!ordinal) for (const c of OPTIONAL_CATEGORIES[tag.split('-')[0].toLowerCase()] || []) cats.delete(c)
     return [...cats]
   } catch {
     return null // unknown/invalid locale tag — skip the category check

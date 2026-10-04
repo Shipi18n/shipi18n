@@ -30,6 +30,7 @@ function hint(f, pair) {
       return `write ${n} forms separated by a plain '|', each keeping the source form's placeholders`
     }
     case 'plural-category':
+      if (f.keys?.length) return `add ${f.keys.join(', ')}, translated for those counts`
       return 'add the missing plural categories named above to the ICU plural'
     case 'icu-invalid':
       return 'keep the source ICU structure ({arg, plural|select, …}) and translate only the text inside it'

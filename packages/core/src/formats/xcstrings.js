@@ -24,10 +24,10 @@
  * - state "new" (or a missing localization) means untranslated → the key is
  *   omitted from that language's object, so it surfaces as a missing key.
  * - state "needs_review" / "stale" keeps its value but yields a warning finding.
- * - Plural variations become nested objects; target categories the source does
- *   not declare are checked for placeholder parity against the source's "other"
- *   form instead of being reported as orphans — CLDR category sets legitimately
- *   differ per language (ru needs few/many; en does not).
+ * - Plural variations become nested objects ({ plural: { one, few, … } }). Every
+ *   category is passed through: the core check knows CLDR category sets differ per
+ *   language (ru needs few/many; en does not; ja has only other), checks extra
+ *   forms against the source's "other", and warns on forms a language needs.
  */
 import { validatePlaceholders } from '../placeholders.js'
 
@@ -98,29 +98,11 @@ export function parseXcstrings(parsed) {
       }
 
       if (loc.variations?.plural) {
-        const srcPlural = typeof srcValue === 'object' ? srcValue.plural : null
-        const srcCats = srcPlural ? Object.keys(srcPlural) : []
-        const reference = srcPlural ? (srcPlural.other ?? Object.values(srcPlural)[0]) : srcValue
         const kept = {}
         for (const [cat, node] of Object.entries(loc.variations.plural)) {
           const value = unitValue(node)
           if (value == null || unitState(node) === 'new') continue
-          if (!srcPlural || srcCats.includes(cat)) {
-            kept[cat] = value // shared category → normal parity + placeholder checks
-          } else if (typeof reference === 'string') {
-            // Extra CLDR category (ru "few"/"many"): legitimate, not an orphan —
-            // but its placeholders must still match the source.
-            const { missing } = validatePlaceholders(reference, value, { format: 'apple' })
-            if (missing.length) {
-              findings.push({
-                lang,
-                path: `${key}.plural.${cat}`,
-                type: 'placeholder-missing',
-                severity: 'error',
-                message: `dropped ${missing.join(', ')}`,
-              })
-            }
-          }
+          kept[cat] = value
         }
         if (Object.keys(kept).length) languages[lang][key] = { plural: kept }
       }

@@ -7,7 +7,7 @@
  */
 import { flatten } from './translate.js'
 import { validatePlaceholders } from './placeholders.js'
-import { isICUControl, checkICU } from './icu.js'
+import { isICUControl, checkICU, requiredCategories } from './icu.js'
 
 /**
  * vue-i18n expresses plurals as one pipe-separated string
@@ -99,6 +99,74 @@ const isDateFormatKey = (path) => /(^|\.)(date|time)\.formats(\.|$)/.test(path)
 const isCldrSingularKey = (path) => /(^|\.)(one|zero)$|_(one|zero)$/.test(path)
 const isCountPlaceholder = (ph) => /^(\{\{?|%\{)(count|n|num|number)\}?\}$/.test(ph)
 
+/**
+ * Key-based plurals: i18next suffixes (`items_one`, `items_ordinal_few`) and nested
+ * category keys (`items.one` — Rails YAML, Android <plurals>, .xcstrings variations).
+ * Each language has its own CLDR categories, so the key set legitimately differs from
+ * the source: Polish adds `_few`/`_many`, Japanese has only `_other`. Compared key by
+ * key, a correct Polish file read as two orphans ("delete this key"), a correct
+ * Japanese one failed on a missing `_one`, and Polish with only one/other passed.
+ */
+const PLURAL_CATS = new Set(['zero', 'one', 'two', 'few', 'many', 'other'])
+const SUFFIX_PLURAL = /^(.+?)_(ordinal_)?(zero|one|two|few|many|other)$/
+const NESTED_PLURAL = /^(.+)\.(zero|one|two|few|many|other)$/
+const pluralKey = (g, cat) => (g.nested ? `${g.base}.${cat}` : `${g.base}_${g.ordinal ? 'ordinal_' : ''}${cat}`)
+
+function pluralGroupOf(path) {
+  let m = SUFFIX_PLURAL.exec(path)
+  if (m) return { id: `${m[1]}_${m[2] || ''}`, base: m[1], ordinal: Boolean(m[2]), nested: false, cat: m[3] }
+  m = NESTED_PLURAL.exec(path)
+  if (m) return { id: `${m[1]}.`, base: m[1], ordinal: false, nested: true, cat: m[2] }
+  return null
+}
+
+/** Source plural groups: at least two categories including `other` (a lone `gender_other` is a word, not a plural). */
+function pluralGroups(srcKeys) {
+  const groups = new Map()
+  const children = new Map() // nested parent → every child key name, to require all-category children
+  for (const path of srcKeys) {
+    const dot = path.lastIndexOf('.')
+    if (dot > 0) {
+      const parent = path.slice(0, dot)
+      if (!children.has(parent)) children.set(parent, [])
+      children.get(parent).push(path.slice(dot + 1))
+    }
+    const g = pluralGroupOf(path)
+    if (!g) continue
+    if (!groups.has(g.id)) groups.set(g.id, { ...g, cats: new Set() })
+    groups.get(g.id).cats.add(g.cat)
+  }
+  for (const [id, g] of groups) {
+    const ok =
+      g.cats.has('other') && g.cats.size >= 2 && (!g.nested || children.get(g.base).every((k) => PLURAL_CATS.has(k)))
+    if (!ok) groups.delete(id)
+  }
+  return groups
+}
+
+/** Every CLDR category a language has (incl. ones only reached by decimals or millions), or null if unknown. */
+function allCategories(lang, ordinal) {
+  const tag = String(lang).replace(/_/g, '-')
+  const resolved = LANG_ALIASES[tag.toLowerCase()] || tag
+  try {
+    if (!Intl.PluralRules.supportedLocalesOf(resolved).length) return null
+    return new Intl.PluralRules(resolved, { type: ordinal ? 'ordinal' : 'cardinal' }).resolvedOptions().pluralCategories
+  } catch {
+    return null
+  }
+}
+
+function neededCategories(lang, ordinal) {
+  const tag = String(lang).replace(/_/g, '-')
+  const resolved = LANG_ALIASES[tag.toLowerCase()] || tag
+  try {
+    if (!Intl.PluralRules.supportedLocalesOf(resolved).length) return null
+  } catch {
+    return null
+  }
+  return requiredCategories(resolved, ordinal)
+}
+
 /** Heuristic for "probably untranslated": multi-word and contains letters. */
 const looksTranslatable = (str) => /\s/.test(str.trim()) && /[a-zA-Z]/.test(str)
 
@@ -170,8 +238,38 @@ export function checkTranslations({ source, target, targetLang = 'target', gloss
   const tgtKeys = Object.keys(tgt)
   const tgtSet = new Set(tgtKeys)
 
+  // Key-based plurals, per this target language (see PLURAL_CATS above).
+  const exemptMissing = new Set() // source categories this language doesn't have (ja `items_one`)
+  const extraForms = new Map() // target-only categories it does have (pl `items_few`) → source `other` key
+  const pluralFindings = []
+  for (const g of pluralGroups(srcKeys).values()) {
+    const needed = neededCategories(targetLang, g.ordinal)
+    const all = allCategories(targetLang, g.ordinal)
+    if (!needed || !all) continue
+    const has = [...PLURAL_CATS].filter((c) => tgtSet.has(pluralKey(g, c)))
+    for (const c of g.cats) {
+      if (c !== 'other' && c !== 'zero' && !all.includes(c)) exemptMissing.add(pluralKey(g, c))
+    }
+    for (const c of has) {
+      if (!g.cats.has(c) && (all.includes(c) || c === 'zero')) extraForms.set(pluralKey(g, c), pluralKey(g, 'other'))
+    }
+    if (!has.length) continue // nothing translated yet: the missing `other` key already reports it
+    const lacking = [...PLURAL_CATS].filter((c) => needed.includes(c) && !has.includes(c) && !g.cats.has(c))
+    if (lacking.length) {
+      pluralFindings.push({
+        type: 'plural-category',
+        severity: 'warning',
+        path: g.nested ? g.base : `${g.base}${g.ordinal ? '_ordinal' : ''}`,
+        missing: lacking,
+        message: `plural is missing CLDR ${targetLang} categor${lacking.length > 1 ? 'ies' : 'y'} ${lacking.join(', ')} (has ${has.join(', ')})`,
+        keys: lacking.map((c) => pluralKey(g, c)),
+      })
+    }
+  }
+
   for (const path of srcKeys) {
     if (isMetaKey(path)) continue
+    if (!tgtSet.has(path) && exemptMissing.has(path)) continue
     if (!tgtSet.has(path)) {
       findings.push({
         type: 'missing-key',
@@ -319,6 +417,29 @@ export function checkTranslations({ source, target, targetLang = 'target', gloss
 
   for (const path of tgtKeys) {
     if (isMetaKey(path)) continue
+    if (extraForms.has(path)) {
+      // A form the source language lacks (pl `items_few`): check it against the source's `other`.
+      const s = src[extraForms.get(path)]
+      const t = tgt[path]
+      if (typeof s === 'string' && typeof t === 'string' && t.trim() !== '' && !/(^|\.|_)zero$/.test(path)) {
+        const { missing } = validatePlaceholders(s, t, { format })
+        // Only the count dropped: Arabic `two` is "دقيقتان" ("two minutes"), no digit — like English `one`.
+        // Still worth a look (Ukrainian `few` hard-coding "1 хвилини" is wrong for 2–4), but nothing breaks.
+        // Any other placeholder dropped is a broken variable.
+        const countOnly = !/\{\s*\}/.test(t) && missing.every(isCountPlaceholder)
+        if (missing.length)
+          findings.push({
+            type: 'placeholder-missing',
+            severity: countOnly ? 'warning' : 'error',
+            path,
+            missing,
+            message: `dropped ${missing.join(', ')}${countOnly ? ' (count left out of a plural form — check the text is right for every number in this category)' : ''}`,
+            source: s,
+            translation: t,
+          })
+      }
+      continue
+    }
     if (!srcSet.has(path)) {
       findings.push({
         type: 'orphan-key',
@@ -329,7 +450,9 @@ export function checkTranslations({ source, target, targetLang = 'target', gloss
     }
   }
 
+  findings.push(...pluralFindings)
   const missingCount = findings.filter((f) => f.type === 'missing-key').length
+  const counted = srcKeys.length - [...exemptMissing].filter((p) => !tgtSet.has(p)).length
   return {
     findings,
     stats: {
@@ -338,7 +461,7 @@ export function checkTranslations({ source, target, targetLang = 'target', gloss
       missing: missingCount,
       errors: findings.filter((f) => f.severity === 'error').length,
       warnings: findings.filter((f) => f.severity === 'warning').length,
-      coverage: srcKeys.length ? (srcKeys.length - missingCount) / srcKeys.length : 1,
+      coverage: counted ? (counted - missingCount) / counted : 1,
     },
   }
 }
