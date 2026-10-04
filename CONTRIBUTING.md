@@ -21,7 +21,7 @@ packages/
 ├── core           # the engine: format readers, checks, optional translation — everything builds on it
 ├── cli            # shipi18n check / translate / init
 ├── mcp            # Model Context Protocol server
-└── vite-plugin    # build-time check and translation for Vite
+└── vite-plugin    # build-time translation for Vite (bring your own LLM key)
 ```
 
 The GitHub Action lives in its own repo, [Shipi18n/shipi18n-github-action](https://github.com/Shipi18n/shipi18n-github-action),
