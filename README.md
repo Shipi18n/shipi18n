@@ -7,23 +7,47 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 [![Smithery](https://img.shields.io/badge/Smithery-96%2F100-6b46c1)](https://smithery.ai/servers/ogreenowow/shipi18n)
 
-**Catch broken translations before you ship them.** An open-source QA gate for your locale files —
-and, when you want it, an i18n translation engine that runs on your own LLM key.
+**Catch broken translations before you ship them.** Shipi18n is an open-source check for locale files: it fails CI
+when a translation — from a human, a TMS or an AI agent — drops or breaks a placeholder, plural or key, and shows
+the exact fix.
 
-Your `es.json` says `Hola` where the English says `Hello {{name}}`. The placeholder is gone, the
-build is green, and the bug ships. Shipi18n finds that, and it finds the harder kind too: the string
-that has every placeholder and still says the wrong thing.
-
-![shipi18n check finding a dropped placeholder, then an LLM catching a translation that says "will save" where the English says "delete"](docs/check-demo.gif)
-
-*A real run, not a mockup — [`docs/check-demo.tape`](docs/check-demo.tape) reproduces it.*
+- **Detects:** dropped or renamed placeholders (`{name}`, `{{count}}`, `%{name}`, `%s`, `%1$s`, `%@`), plurals whose
+  separator was lost or whose forms don't fit the language, invalid ICU MessageFormat, missing and orphaned keys,
+  empty and untranslated strings.
+- **Formats:** JSON (i18next, vue-i18n, next-intl, flat or nested), YAML including Rails, Flutter ARB, Apple
+  `.xcstrings`, Android `strings.xml`, gettext `.po`, XLIFF.
+- **Uploads anything?** No. The check runs offline, on your machine or CI runner.
+- **Needs a key or account?** No. Only the optional `--semantic` review and `translate` use your own LLM key.
 
 ```bash
 npx @shipi18n/cli check ./locales -s en
 ```
 
-No API key, no account, no config. Missing keys, dropped placeholders, collapsed plurals, empty
-values and untranslated copy — as human output, JSON, SARIF (GitHub PR annotations) or JUnit.
+Exit `0` clean, `1` findings (each with a one-line `fix`), `2` usage error. Output as text, JSON, SARIF (GitHub PR
+annotations) or JUnit.
+
+![shipi18n check finding a dropped placeholder, then an LLM catching a translation that says "will save" where the English says "delete"](docs/check-demo.gif)
+
+*A real run, not a mockup — [`docs/check-demo.tape`](docs/check-demo.tape) reproduces it.*
+
+### Choose your task
+
+| I want to… | Use |
+| --- | --- |
+| check locale files locally or in any CI | `npx @shipi18n/cli check ./locales -s en` |
+| annotate GitHub pull requests | [`Shipi18n/shipi18n-github-action@v3`](https://github.com/Shipi18n/shipi18n-github-action) ([setup](https://shipi18n.com/docs/github-action/setup)) |
+| run it without Node | Docker `ghcr.io/shipi18n/cli`, or the [pre-commit hook](packages/cli/README.md#pre-commit) |
+| run it without npm | the single file `shipi18n.mjs` from [GitHub releases](https://github.com/Shipi18n/shipi18n/releases), with a SHA-256 and a build-provenance attestation |
+| use it from a Python, Ruby, Go or Java project | the same CLI via Docker, pre-commit or the single file. There is no Python or Ruby package to import |
+| have my AI coding agent check its own translations | `npx @shipi18n/cli init --agents`, or the MCP server [`@shipi18n/mcp`](packages/mcp) |
+| check meaning, not only structure | `check --semantic` with your own Anthropic or OpenAI key |
+| translate (optional) | `shipi18n translate` with your own key |
+
+### What it doesn't do
+
+- It is not a hosted service or a TMS: no account, dashboard or pricing. (An earlier hosted translation API was retired.)
+- It is not a library you import from Python or Ruby; it is a CLI you run from any CI.
+- Without `--semantic` it checks structure, not whether a translation reads well.
 
 **Found in the wild.** The same command on a real project — Hoppscotch's Afrikaans locale as it was
 when we ran it (structural rules only; the missing-key noise switched off so the placeholder findings stand out):
@@ -44,16 +68,18 @@ $ npx @shipi18n/cli check packages/hoppscotch-common/locales -s en \
 
 `{naam}` is `{name}` translated; vue-i18n will never substitute it. We scan public repos, verify every finding by
 hand against the source language, and send the fix upstream. Running tally, one row per repo:
-**[shipi18n.com/oss](https://shipi18n.com/oss)** — 64 repos scanned · 21 ship a verified broken string · 119 strings
-verified by hand · 3 fixed upstream in the first week.
+**[shipi18n.com/oss](https://shipi18n.com/oss)** — 95 repos scanned · 23 ship a verified broken string · 402 strings
+verified by hand · fixed upstream in 8 repos.
 
 | Repo | What happened |
 |---|---|
 | Solidus | 13 dropped `%{…}` interpolations in pt-BR — [PR merged the same day](https://github.com/solidusio/solidus/pull/6626), three core approvals |
 | Plane | Czech toasts lost `{templateName}`/`{templateType}` — [PR merged in 3 hours](https://github.com/makeplane/plane/pull/9848) |
-| nocodb | [our issue](https://github.com/nocodb/nocodb/issues/14573) → [maintainer PR sweeping all 39 locales](https://github.com/nocodb/nocodb/pull/14581) |
+| nocodb | [our issue](https://github.com/nocodb/nocodb/issues/14573) → [maintainer PR sweeping all 39 locales](https://github.com/nocodb/nocodb/pull/14581); later [182 plurals in 13 locales](https://github.com/nocodb/nocodb/issues/14717) whose `\|` machine translation had turned into `<unk>`, fixed [the same day](https://github.com/nocodb/nocodb/pull/14718) |
 | Excalidraw | [our issue](https://github.com/excalidraw/excalidraw/issues/12097) → [contributor fix + a placeholder-parity test suite](https://github.com/excalidraw/excalidraw/pull/12109) |
-| Hoppscotch | the `af` run above — [PR open](https://github.com/hoppscotch/hoppscotch/pull/6648), 7 strings |
+| Hoppscotch | the `af` run above — [PR merged](https://github.com/hoppscotch/hoppscotch/pull/6648), 7 strings |
+| 24pullrequests | 20 dropped interpolations fixed in two PRs, then [an interpolation check added to their own test suite](https://github.com/24pullrequests/24pullrequests/pull/5086) |
+| devise_invitable | `%{email)` typo fixed, then [the check added to their CI](https://github.com/scambra/devise_invitable/pull/928) |
 
 Every false positive the scan exposed in our own checker became a fixture in [`evals/placeholders/corpus.jsonl`](evals/placeholders/corpus.jsonl) first.
 
