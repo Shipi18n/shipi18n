@@ -8,6 +8,7 @@ import { translateCommand } from '../src/commands/translate.js'
 import { checkCommand } from '../src/commands/check.js'
 import { lockCommand } from '../src/commands/lock.js'
 import { wpSyncCommand } from '../src/commands/wp-sync.js'
+import { initCommand } from '../src/commands/init.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 // The single-file build (scripts/build-single.mjs) injects the version, since a
@@ -49,6 +50,7 @@ translateCommand(program)
 checkCommand(program)
 lockCommand(program)
 wpSyncCommand(program)
+initCommand(program)
 try {
   program.parse(process.argv)
 } catch (err) {

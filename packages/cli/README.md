@@ -74,7 +74,17 @@ blocks PRs gets the tool uninstalled.
 
 ### For AI coding agents
 
-After writing or editing locale files, run the check on just what changed and fix until it exits `0`:
+Tell the agents working in your repo about the check, once:
+
+```bash
+npx @shipi18n/cli init --agents      # --dry-run to preview, --all to also create CLAUDE.md, Copilot and Cursor files
+```
+
+It adds a four-line block to `AGENTS.md` (and to `CLAUDE.md`, `.github/copilot-instructions.md` or `.cursor/rules/`
+if your repo already has them) naming your locale folder and the command below. Running it again updates the
+block in place.
+
+After writing or editing locale files, the agent runs the check on just what changed and fixes until it exits `0`:
 
 ```bash
 npx @shipi18n/cli check ./locales -s en --changed-only --json
@@ -179,7 +189,7 @@ runs the Docker image, so **no Node is required**:
 ```yaml
 repos:
   - repo: https://github.com/Shipi18n/shipi18n
-    rev: v2.13.1
+    rev: v2.14.0
     hooks:
       - id: shipi18n-check
         # args: ['check', './i18n', '-s', 'en']   # if not ./locales
@@ -194,7 +204,7 @@ repos:
       - id: shipi18n-check
         name: shipi18n check
         language: node
-        additional_dependencies: ['@shipi18n/cli@2.13.1']
+        additional_dependencies: ['@shipi18n/cli@2.14.0']
         entry: shipi18n check ./locales -s en
         pass_filenames: false
         files: '\.(json|ya?ml|po|xlf|xliff|xml|arb|xcstrings)$'

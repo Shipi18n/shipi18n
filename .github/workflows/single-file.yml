@@ -50,11 +50,11 @@ jobs:
           [ "$got" = "$want" ] || { echo "built $got, tag says $want"; exit 1; }
 
       # The file must behave exactly like the npm package: same suite, same exit codes.
-      - name: Agent-contract suite against the single file (run outside the repo)
+      - name: Agent-contract + init suites against the single file (run outside the repo)
         run: |
           set -euo pipefail
           mkdir -p /tmp/iso && cp out/shipi18n.mjs /tmp/iso/
-          cd packages/cli && SHIPI18N_BIN=/tmp/iso/shipi18n.mjs NODE_OPTIONS=--experimental-vm-modules npx jest agent-contract
+          cd packages/cli && SHIPI18N_BIN=/tmp/iso/shipi18n.mjs NODE_OPTIONS=--experimental-vm-modules npx jest agent-contract init
 
       - name: Checksum
         working-directory: out
