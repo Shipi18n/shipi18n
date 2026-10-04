@@ -1,5 +1,12 @@
 # @shipi18n/cli
 
+## 2.14.0
+
+- **`shipi18n init --agents`** writes a four-line instruction for AI coding agents into `AGENTS.md` (and into
+  `CLAUDE.md`, `.github/copilot-instructions.md` and a Cursor rule when the repo already has them, or with
+  `--all`): the detected locale folder, `check … --changed-only --json`, what each exit code means, and to keep
+  placeholders as they are. Idempotent (marker-delimited), `--dry-run` to preview. Also in the single-file build.
+
 ## 2.13.1
 
 - **Single-file build:** every GitHub release now carries `shipi18n.mjs`, the whole CLI in one file: no `npm

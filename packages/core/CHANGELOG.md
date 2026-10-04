@@ -1,5 +1,9 @@
 # @shipi18n/core
 
+## 2.14.0
+
+- No changes; released alongside `@shipi18n/cli@2.14.0` (`init --agents`).
+
 ## 2.13.1
 
 - No changes; released alongside `@shipi18n/cli@2.13.1` (single-file build).
