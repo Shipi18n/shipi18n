@@ -83,34 +83,6 @@ importers:
         specifier: ^29.7.0
         version: 29.7.0(@types/node@26.1.1)
 
-  packages/github-action:
-    dependencies:
-      '@actions/core':
-        specifier: ^1.11.1
-        version: 1.11.1
-      '@actions/exec':
-        specifier: ^1.1.1
-        version: 1.1.1
-      '@actions/github':
-        specifier: ^6.0.1
-        version: 6.0.1
-      '@anthropic-ai/sdk':
-        specifier: ^0.114.0
-        version: 0.114.0(zod@3.25.76)
-      '@shipi18n/core':
-        specifier: workspace:^
-        version: link:../core
-      openai:
-        specifier: ^4.0.0
-        version: 4.104.0(zod@3.25.76)
-    devDependencies:
-      '@vercel/ncc':
-        specifier: ^0.38.1
-        version: 0.38.4
-      jest:
-        specifier: ^29.7.0
-        version: 29.7.0(@types/node@26.1.1)
-
   packages/mcp:
     dependencies:
       '@anthropic-ai/sdk':
@@ -153,21 +125,6 @@ importers:
         version: 29.7.0(@types/node@26.1.1)
 
 packages:
-
-  '@actions/core@1.11.1':
-    resolution: {integrity: sha512-hXJCSrkwfA46Vd9Z3q4cpEpHB1rL5NG04+/rbqW9d3+CSvtB1tYe8UTpAlixa1vj0m/ULglfEK2UKxMGxCxv5A==}
-
-  '@actions/exec@1.1.1':
-    resolution: {integrity: sha512-+sCcHHbVdk93a0XT19ECtO/gIXoxvdsgQLzb2fE2/5sIZmWQuluYyjPQtrtTHdU1YzTZ7bAPN4sITq2xi1679w==}
-
-  '@actions/github@6.0.1':
-    resolution: {integrity: sha512-xbZVcaqD4XnQAe35qSQqskb3SqIAfRyLBrHMd/8TuL7hJSz2QtbDwnNM8zWx4zO5l2fnGtseNE3MbEvD7BxVMw==}
-
-  '@actions/http-client@2.2.3':
-    resolution: {integrity: sha512-mx8hyJi/hjFvbPokCg4uRd4ZX78t+YyRPtnKWwIl+RzNaVuFpQHfmlGVfsKEJN8LwTCvL+DfVgAM04XaHkm6bA==}
-
-  '@actions/io@1.1.3':
-    resolution: {integrity: sha512-wi9JjgKLYS7U/z8PPbco+PvTb/nRWjeoFlJ1Qer83k/3C5PHQi28hiVdeE2kHXmIL99mQFawx8qt/JPjZilJ8Q==}
 
   '@anthropic-ai/sdk@0.114.0':
     resolution: {integrity: sha512-zRFGTVMFEm77gt70Q0B+CDRKa9AcguydCcp6bD/dXWv8UkfsVFqCbaqU8+4B/pob3+Vy434LgtrBmwSvxfKr3g==}
@@ -699,10 +656,6 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@fastify/busboy@2.1.1':
-    resolution: {integrity: sha512-vBZP4NlzfOlerQTnba4aqZoMhE/a9HY7HRqoOPaETQcSQuWEIyZMHGfVu6w9wGtGK5fED5qRs2DteVCjOH60sA==}
-    engines: {node: '>=14'}
-
   '@formatjs/ecma402-abstract@2.3.6':
     resolution: {integrity: sha512-HJnTFeRM2kVFVr5gr5kH1XP6K0JcJtE7Lzvtr3FS/so5f1kpsqqqxy5JF+FRaO6H2qmcMfAUIox7AJteieRtVw==}
 
@@ -853,54 +806,6 @@ packages:
   '@nodelib/fs.walk@1.2.8':
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
-
-  '@octokit/auth-token@4.0.0':
-    resolution: {integrity: sha512-tY/msAuJo6ARbK6SPIxZrPBms3xPbfwBrulZe0Wtr/DIY9lje2HeV1uoebShn6mx7SjCHif6EjMvoREj+gZ+SA==}
-    engines: {node: '>= 18'}
-
-  '@octokit/core@5.2.2':
-    resolution: {integrity: sha512-/g2d4sW9nUDJOMz3mabVQvOGhVa4e/BN/Um7yca9Bb2XTzPPnfTWHWQg+IsEYO7M3Vx+EXvaM/I2pJWIMun1bg==}
-    engines: {node: '>= 18'}
-
-  '@octokit/endpoint@9.0.6':
-    resolution: {integrity: sha512-H1fNTMA57HbkFESSt3Y9+FBICv+0jFceJFPWDePYlR/iMGrwM5ph+Dd4XRQs+8X+PUFURLQgX9ChPfhJ/1uNQw==}
-    engines: {node: '>= 18'}
-
-  '@octokit/graphql@7.1.1':
-    resolution: {integrity: sha512-3mkDltSfcDUoa176nlGoA32RGjeWjl3K7F/BwHwRMJUW/IteSa4bnSV8p2ThNkcIcZU2umkZWxwETSSCJf2Q7g==}
-    engines: {node: '>= 18'}
-
-  '@octokit/openapi-types@20.0.0':
-    resolution: {integrity: sha512-EtqRBEjp1dL/15V7WiX5LJMIxxkdiGJnabzYx5Apx4FkQIFgAfKumXeYAqqJCj1s+BMX4cPFIFC4OLCR6stlnA==}
-
-  '@octokit/openapi-types@24.2.0':
-    resolution: {integrity: sha512-9sIH3nSUttelJSXUrmGzl7QUBFul0/mB8HRYl3fOlgHbIWG+WnYDXU3v/2zMtAvuzZ/ed00Ei6on975FhBfzrg==}
-
-  '@octokit/plugin-paginate-rest@9.2.2':
-    resolution: {integrity: sha512-u3KYkGF7GcZnSD/3UP0S7K5XUFT2FkOQdcfXZGZQPGv3lm4F2Xbf71lvjldr8c1H3nNbF+33cLEkWYbokGWqiQ==}
-    engines: {node: '>= 18'}
-    peerDependencies:
-      '@octokit/core': '5'
-
-  '@octokit/plugin-rest-endpoint-methods@10.4.1':
-    resolution: {integrity: sha512-xV1b+ceKV9KytQe3zCVqjg+8GTGfDYwaT1ATU5isiUyVtlVAO3HNdzpS4sr4GBx4hxQ46s7ITtZrAsxG22+rVg==}
-    engines: {node: '>= 18'}
-    peerDependencies:
-      '@octokit/core': '5'
-
-  '@octokit/request-error@5.1.1':
-    resolution: {integrity: sha512-v9iyEQJH6ZntoENr9/yXxjuezh4My67CBSu9r6Ve/05Iu5gNgnisNWOsoJHTP6k0Rr0+HQIpnH+kyammu90q/g==}
-    engines: {node: '>= 18'}
-
-  '@octokit/request@8.4.1':
-    resolution: {integrity: sha512-qnB2+SY3hkCmBxZsR/MPCybNmbJe4KAlfWErXq+rBKkQJlbjdJeS85VI9r8UqeLYLvnAenU8Q1okM/0MBsAGXw==}
-    engines: {node: '>= 18'}
-
-  '@octokit/types@12.6.0':
-    resolution: {integrity: sha512-1rhSOfRa6H9w4YwK0yrf5faDaDTb+yLyBUKOCV4xtCDB5VmIPqd/v9yr9o6SAzOAlRxMiRiCic6JVM1/kunVkw==}
-
-  '@octokit/types@13.10.0':
-    resolution: {integrity: sha512-ifLaO34EbbPj0Xgro4G5lP5asESjwHracYJvVaPIyXMuiuXLlhic3S47cBdTb+jfODkTE5YtGCLt3Ay3+J97sA==}
 
   '@rollup/rollup-android-arm-eabi@4.62.3':
     resolution: {integrity: sha512-c0wdcekXtQvvn5Tsrk/+op/gUArrbWaFduBnTLP2l1cKLSQs4diMWjJw3m6A0DdzT8dAAX95KpkJ3qynCePbmw==}
@@ -1117,10 +1022,6 @@ packages:
   '@types/yargs@17.0.35':
     resolution: {integrity: sha512-qUHkeCyQFxMXg79wQfTtfndEC+N9ZZg76HJftDJp+qH2tV7Gj4OJi7l+PiWwJ+pWtW8GwSmqsDj/oymhrTWXjg==}
 
-  '@vercel/ncc@0.38.4':
-    resolution: {integrity: sha512-8LwjnlP39s08C08J5NstzriPvW1SP8Zfpp1BvC2sI35kPeZnHfxVkCwu4/+Wodgnd60UtT1n8K8zw+Mp7J9JmQ==}
-    hasBin: true
-
   abort-controller@3.0.0:
     resolution: {integrity: sha512-h8lQ8tacZYnR3vNQTgibj+tODHI5/+l06Au2Pcriv/Gmet0eaj4TwWH41sO9wnHDiQsEj19q0drzdWdeAHtweg==}
     engines: {node: '>=6.5'}
@@ -1220,9 +1121,6 @@ packages:
     resolution: {integrity: sha512-HYXq73DDpCtNzOmrFsm9eSwCvWCql0RzqjpDzXN9EadiLJ4DNat0nsZ/Bzmy+Ud12mb4/zKDY0cQ805ZzN+i0A==}
     engines: {node: '>=6.0.0'}
     hasBin: true
-
-  before-after-hook@2.2.3:
-    resolution: {integrity: sha512-NzUnlZexiaH/46WDhANlyR2bXRopNg4F/zuSA3OpZnllCUgRaOF2znDioDWrmbNVsuZk6l9pMquQB38cfBZwkQ==}
 
   better-path-resolve@1.0.0:
     resolution: {integrity: sha512-pbnl5XzGBdrFU/wT4jqmJVPn2B6UHPBOhzMQkY/SPUPB6QtUXtmBHBIwCbXJol93mOpGMnQyP/+BB19q04xj7g==}
@@ -1403,9 +1301,6 @@ packages:
   depd@2.0.0:
     resolution: {integrity: sha512-g7nH6P6dyDioJogAAGprGpCtVImJhpPk/roCzdb3fIh61/s/nPsfR6onyMwkCAR/OlC3yBC0lESvUoQEAssIrw==}
     engines: {node: '>= 0.8'}
-
-  deprecation@2.3.1:
-    resolution: {integrity: sha512-xmHIy4F3scKVwMsQ4WnVaS8bHOx0DmVwRywosKhaILI0ywMDWPtBSku2HNxRvF7jtwDRsoEwYQSfbxj8b7RlJQ==}
 
   detect-indent@6.1.0:
     resolution: {integrity: sha512-reYkTUJAZb9gUuZ2RvVCNhVHdg62RHnJ7WJl8ftMi4diZ6NWlciOzQN88pUhSELEwflJht4oQDv0F0BMlwaYtA==}
@@ -2532,10 +2427,6 @@ packages:
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
 
-  tunnel@0.0.6:
-    resolution: {integrity: sha512-1h/Lnq9yajKY2PEbBadPXj3VxsDDu844OnaAo52UVmIzIvwwtBPIuNvkjuzBlTWpfJyUbG3ez0KSBibQkj4ojg==}
-    engines: {node: '>=0.6.11 <=0.7.0 || >=0.7.3'}
-
   turbo@2.10.7:
     resolution: {integrity: sha512-GHx6WExIFSKNJ5qMlzDpXBXlu9ApxaMjqxAVrCNcW94xf/+uqgIz41SAuRUMbXva2ExNAaY/h8V0q90SWSzmRw==}
     hasBin: true
@@ -2557,13 +2448,6 @@ packages:
 
   undici-types@8.3.0:
     resolution: {integrity: sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ==}
-
-  undici@5.29.0:
-    resolution: {integrity: sha512-raqeBD6NQK4SkWhQzeYKd1KmIG6dllBOTt55Rmkt4HtI9mwdWtJljnrXjAFUBLTSN67HWrOIZ3EPF4kjUw80Bg==}
-    engines: {node: '>=14.0'}
-
-  universal-user-agent@6.0.1:
-    resolution: {integrity: sha512-yCzhz6FN2wU1NiiQRogkTQszlQSlpWaw8SvVegAc+bDxbzHgh1vX8uIe8OYyMH6DwH+sdTJsgMl36+mSMdRJIQ==}
 
   universalify@0.1.2:
     resolution: {integrity: sha512-rBJeI5CXAlmy1pV+617WB9J63U6XcazHHF2f2dbJix4XzpUF0RS3Zbj0FGIOCAva5P/d/GBOYaACQ1w+0azUkg==}
@@ -2684,32 +2568,6 @@ packages:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
 snapshots:
-
-  '@actions/core@1.11.1':
-    dependencies:
-      '@actions/exec': 1.1.1
-      '@actions/http-client': 2.2.3
-
-  '@actions/exec@1.1.1':
-    dependencies:
-      '@actions/io': 1.1.3
-
-  '@actions/github@6.0.1':
-    dependencies:
-      '@actions/http-client': 2.2.3
-      '@octokit/core': 5.2.2
-      '@octokit/plugin-paginate-rest': 9.2.2(@octokit/core@5.2.2)
-      '@octokit/plugin-rest-endpoint-methods': 10.4.1(@octokit/core@5.2.2)
-      '@octokit/request': 8.4.1
-      '@octokit/request-error': 5.1.1
-      undici: 5.29.0
-
-  '@actions/http-client@2.2.3':
-    dependencies:
-      tunnel: 0.0.6
-      undici: 5.29.0
-
-  '@actions/io@1.1.3': {}
 
   '@anthropic-ai/sdk@0.114.0(zod@3.25.76)':
     dependencies:
@@ -3211,8 +3069,6 @@ snapshots:
   '@esbuild/win32-x64@0.28.2':
     optional: true
 
-  '@fastify/busboy@2.1.1': {}
-
   '@formatjs/ecma402-abstract@2.3.6':
     dependencies:
       '@formatjs/fast-memoize': 2.2.7
@@ -3493,64 +3349,6 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.20.1
 
-  '@octokit/auth-token@4.0.0': {}
-
-  '@octokit/core@5.2.2':
-    dependencies:
-      '@octokit/auth-token': 4.0.0
-      '@octokit/graphql': 7.1.1
-      '@octokit/request': 8.4.1
-      '@octokit/request-error': 5.1.1
-      '@octokit/types': 13.10.0
-      before-after-hook: 2.2.3
-      universal-user-agent: 6.0.1
-
-  '@octokit/endpoint@9.0.6':
-    dependencies:
-      '@octokit/types': 13.10.0
-      universal-user-agent: 6.0.1
-
-  '@octokit/graphql@7.1.1':
-    dependencies:
-      '@octokit/request': 8.4.1
-      '@octokit/types': 13.10.0
-      universal-user-agent: 6.0.1
-
-  '@octokit/openapi-types@20.0.0': {}
-
-  '@octokit/openapi-types@24.2.0': {}
-
-  '@octokit/plugin-paginate-rest@9.2.2(@octokit/core@5.2.2)':
-    dependencies:
-      '@octokit/core': 5.2.2
-      '@octokit/types': 12.6.0
-
-  '@octokit/plugin-rest-endpoint-methods@10.4.1(@octokit/core@5.2.2)':
-    dependencies:
-      '@octokit/core': 5.2.2
-      '@octokit/types': 12.6.0
-
-  '@octokit/request-error@5.1.1':
-    dependencies:
-      '@octokit/types': 13.10.0
-      deprecation: 2.3.1
-      once: 1.4.0
-
-  '@octokit/request@8.4.1':
-    dependencies:
-      '@octokit/endpoint': 9.0.6
-      '@octokit/request-error': 5.1.1
-      '@octokit/types': 13.10.0
-      universal-user-agent: 6.0.1
-
-  '@octokit/types@12.6.0':
-    dependencies:
-      '@octokit/openapi-types': 20.0.0
-
-  '@octokit/types@13.10.0':
-    dependencies:
-      '@octokit/openapi-types': 24.2.0
-
   '@rollup/rollup-android-arm-eabi@4.62.3':
     optional: true
 
@@ -3716,8 +3514,6 @@ snapshots:
     dependencies:
       '@types/yargs-parser': 21.0.3
 
-  '@vercel/ncc@0.38.4': {}
-
   abort-controller@3.0.0:
     dependencies:
       event-target-shim: 5.0.1
@@ -3833,8 +3629,6 @@ snapshots:
   balanced-match@1.0.2: {}
 
   baseline-browser-mapping@2.11.1: {}
-
-  before-after-hook@2.2.3: {}
 
   better-path-resolve@1.0.0:
     dependencies:
@@ -3993,8 +3787,6 @@ snapshots:
   delayed-stream@1.0.0: {}
 
   depd@2.0.0: {}
-
-  deprecation@2.3.1: {}
 
   detect-indent@6.1.0: {}
 
@@ -5320,8 +5112,6 @@ snapshots:
 
   tslib@2.8.1: {}
 
-  tunnel@0.0.6: {}
-
   turbo@2.10.7:
     optionalDependencies:
       '@turbo/darwin-64': 2.10.7
@@ -5344,12 +5134,6 @@ snapshots:
   undici-types@5.26.5: {}
 
   undici-types@8.3.0: {}
-
-  undici@5.29.0:
-    dependencies:
-      '@fastify/busboy': 2.1.1
-
-  universal-user-agent@6.0.1: {}
 
   universalify@0.1.2: {}
 

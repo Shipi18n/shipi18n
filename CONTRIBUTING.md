@@ -18,12 +18,14 @@ Every test runs against a **mock adapter**, so the suite needs no API key, makes
 
 ```
 packages/
-├── core           # the translation engine — everything else builds on it
-├── cli            # shipi18n translate …
+├── core           # the engine: format readers, checks, optional translation — everything builds on it
+├── cli            # shipi18n check / translate / init
 ├── mcp            # Model Context Protocol server
-├── vite-plugin    # build-time translation for Vite
-└── github-action  # ships from its own repo; source of truth lives here
+└── vite-plugin    # build-time check and translation for Vite
 ```
+
+The GitHub Action lives in its own repo, [Shipi18n/shipi18n-github-action](https://github.com/Shipi18n/shipi18n-github-action),
+and bundles a released `@shipi18n/core`; a daily workflow there opens a PR when a new core is published.
 
 `core` has no runtime dependencies, and that is deliberate. Provider SDKs are optional peer dependencies so a user installs only the one they use. Please keep it that way.
 
