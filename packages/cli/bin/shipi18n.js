@@ -10,7 +10,12 @@ import { lockCommand } from '../src/commands/lock.js'
 import { wpSyncCommand } from '../src/commands/wp-sync.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const pkg = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf8'))
+// The single-file build (scripts/build-single.mjs) injects the version, since a
+// bundle has no package.json next to it.
+const pkg =
+  typeof __SHIPI18N_VERSION__ === 'string'
+    ? { version: __SHIPI18N_VERSION__ }
+    : JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf8'))
 
 const program = new Command()
 program

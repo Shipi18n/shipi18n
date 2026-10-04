@@ -120,6 +120,24 @@ or `off` (dropped entirely). Example: `--severity 'untranslated=off,empty-value=
 Or use the action, which bundles the same check with `severity` and `baseline` inputs:
 `uses: Shipi18n/shipi18n-github-action@v3` ([setup](https://shipi18n.com/docs/github-action/setup)).
 
+### No npm at all? One file
+
+Every release also ships the CLI as a single file with everything bundled: no `npm install`, no
+`node_modules`, nothing fetched from the npm registry. It needs only Node 18+.
+
+```bash
+V=v2.13.1   # any release from 2.13.1 on
+curl -fsSLO https://github.com/Shipi18n/shipi18n/releases/download/$V/shipi18n.mjs
+curl -fsSLO https://github.com/Shipi18n/shipi18n/releases/download/$V/shipi18n.mjs.sha256
+sha256sum -c shipi18n.mjs.sha256                      # macOS: shasum -a 256 -c
+gh attestation verify shipi18n.mjs -R Shipi18n/shipi18n   # optional: built by this repo's CI, from that tag
+node shipi18n.mjs check ./locales -s en
+```
+
+It covers `check`, `lock` and `wp-sync`, and passes the same test suite as the npm package. `--semantic`
+and `translate` need an LLM SDK, which isn't bundled; use the npm package for those. You can commit the file
+to your repo and call it from any CI.
+
 ### No Node? Run the check in any CI with Docker
 
 GitHub runners already have Node — the [Action](https://github.com/Shipi18n/shipi18n-github-action) is
@@ -161,7 +179,7 @@ runs the Docker image, so **no Node is required**:
 ```yaml
 repos:
   - repo: https://github.com/Shipi18n/shipi18n
-    rev: v2.13.0
+    rev: v2.13.1
     hooks:
       - id: shipi18n-check
         # args: ['check', './i18n', '-s', 'en']   # if not ./locales
@@ -176,7 +194,7 @@ repos:
       - id: shipi18n-check
         name: shipi18n check
         language: node
-        additional_dependencies: ['@shipi18n/cli@2.13.0']
+        additional_dependencies: ['@shipi18n/cli@2.13.1']
         entry: shipi18n check ./locales -s en
         pass_filenames: false
         files: '\.(json|ya?ml|po|xlf|xliff|xml|arb|xcstrings)$'

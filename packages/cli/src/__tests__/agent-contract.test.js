@@ -6,7 +6,8 @@ import { fileURLToPath } from 'node:url'
 
 // The contract an AI agent (or any script) relies on: 0 clean, 1 findings,
 // 2 usage error — never 1 for a bad flag — plus --changed-only against git.
-const BIN = join(dirname(fileURLToPath(import.meta.url)), '../../bin/shipi18n.js')
+// SHIPI18N_BIN points this suite at another build — CI runs it against the single-file bundle.
+const BIN = process.env.SHIPI18N_BIN || join(dirname(fileURLToPath(import.meta.url)), '../../bin/shipi18n.js')
 const run = (args, cwd) => spawnSync('node', [BIN, ...args], { cwd, encoding: 'utf8' })
 
 function repo() {

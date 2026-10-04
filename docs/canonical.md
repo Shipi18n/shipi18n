@@ -23,7 +23,8 @@ Translate with anything. Verify with Shipi18n.
 ## Capability boundary
 
 Shipi18n is a Node.js tool published on npm. It works in any repo (JavaScript, Python, Ruby, Java, Go, mobile)
-via `npx`, the Docker image `ghcr.io/shipi18n/cli`, pre-commit, or the GitHub Action. It is not a native Python
+via `npx`, the Docker image `ghcr.io/shipi18n/cli`, pre-commit, the GitHub Action, or a single-file download
+with no npm install at all (each GitHub release, with a SHA-256 checksum and a build-provenance attestation). It is not a native Python
 library and is not on PyPI. There is no hosted API or account; that product was retired. Checks need no key.
 Only `--semantic` and translate use your own LLM key. The CLI, the Action and the MCP validators share one engine
 and read the same formats: JSON, YAML (incl. Rails), ARB, xcstrings, gettext, XLIFF and Android XML.

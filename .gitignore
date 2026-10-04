@@ -14,3 +14,6 @@ demo/
 # meant to be committed — the record of human-approved locks — so ignore only
 # the cache file, not the .shipi18n/ directory.)
 .shipi18n/semantic-cache.json
+
+# single-file CLI build output (packages/cli/scripts/build-single.mjs)
+dist-single/

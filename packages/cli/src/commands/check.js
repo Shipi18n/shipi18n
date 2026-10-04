@@ -34,9 +34,10 @@ import {
 import { REPORTERS } from '../reporters.js'
 import { locksFor, DEFAULT_LOCKS_PATH } from './lock.js'
 
-const pkg = JSON.parse(
-  readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'package.json'), 'utf8')
-)
+const pkg =
+  typeof __SHIPI18N_VERSION__ === 'string' // injected by the single-file build
+    ? { version: __SHIPI18N_VERSION__ }
+    : JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'package.json'), 'utf8'))
 
 /* ------------------------------------------------------------------ engine */
 
