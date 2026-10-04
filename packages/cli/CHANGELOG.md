@@ -1,5 +1,10 @@
 # @shipi18n/cli
 
+## 2.15.0
+
+- Bundles `@shipi18n/core@2.15.0`: key-based plurals (i18next `_one`/`_few`, Rails, Android, .xcstrings) are
+  checked against each language's CLDR categories instead of key by key. See the core changelog.
+
 ## 2.14.2
 
 - No changes; released alongside `@shipi18n/mcp@2.3.1` (format list in tool descriptions).
