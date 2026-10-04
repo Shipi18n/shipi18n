@@ -1,5 +1,12 @@
 # @shipi18n/cli
 
+## 2.13.1
+
+- **Single-file build:** every GitHub release now carries `shipi18n.mjs`, the whole CLI in one file: no `npm
+  install`, no `node_modules`, nothing from the npm registry at install time. Published with a SHA-256 checksum
+  and a GitHub build-provenance attestation, and verified against the agent-contract suite before upload.
+  Covers `check`, `lock` and `wp-sync`; `--semantic`/`translate` still need the npm package.
+
 ## 2.13.0
 
 - Picks up `@shipi18n/core@2.13.0`: a plural collapsed to a single form that keeps its variables is now a

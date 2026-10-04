@@ -1,5 +1,9 @@
 # @shipi18n/core
 
+## 2.13.1
+
+- No changes; released alongside `@shipi18n/cli@2.13.1` (single-file build).
+
 ## 2.13.0
 
 - **A plural collapsed to one form is a warning, not an error,** when that one form keeps the source's variables
