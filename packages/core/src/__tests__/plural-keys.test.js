@@ -60,6 +60,42 @@ describe('i18next suffix plurals', () => {
     expect(r.findings.filter((f) => f.path === 'mins.two').map((f) => f.severity)).toEqual(['warning'])
   })
 
+  // good_job #1848: uk/ru `one` is 1, 21, 31…, so "1 хвилина" showed "1" for 21 minutes.
+  // English `one` writes "1 minute" too, so comparing one-to-one passed it.
+  test('Ukrainian "one" hard-coding 1 is held to the source "other" (one covers 21, 31…)', () => {
+    const src = { mins: { one: '1 minute', other: '%{count} minutes' } }
+    const uk = { mins: { one: '1 хвилина', few: '%{count} хвилини', many: '%{count} хвилин', other: '%{count} хвилин' } }
+    const r = checkTranslations({ source: src, target: uk, targetLang: 'uk', format: 'rails' })
+    expect(r.findings.map((f) => `${f.type}:${f.path}:${f.severity}`)).toEqual(['placeholder-missing:mins.one:warning'])
+    expect(r.findings[0].message).toMatch(/also covers 21, 31/)
+  })
+
+  test('the fixed Ukrainian "one" (%{count} хвилина) is clean, not an unexpected variable', () => {
+    const src = { mins: { one: '1 minute', other: '%{count} minutes' } }
+    const uk = { mins: { one: '%{count} хвилина', few: '%{count} хвилини', many: '%{count} хвилин', other: '%{count} хвилин' } }
+    expect(checkTranslations({ source: src, target: uk, targetLang: 'uk', format: 'rails' }).findings).toEqual([])
+  })
+
+  test('German "one" means exactly 1, so "1 Minute" without the count stays clean', () => {
+    const src = { mins: { one: '1 minute', other: '%{count} minutes' } }
+    const de = { mins: { one: '1 Minute', other: '%{count} Minuten' } }
+    expect(checkTranslations({ source: src, target: de, targetLang: 'de', format: 'rails' }).findings).toEqual([])
+  })
+
+  test('Russian "one" dropping a count the source "one" has names the numbers it also covers', () => {
+    const r = run({ items_one: 'один товар', items_few: '{{count}} товара', items_many: '{{count}} товаров', items_other: '{{count}} товара', title: 'Корзина' }, 'ru')
+    const f = r.findings.find((x) => x.path === 'items_one')
+    expect(f.severity).toBe('warning')
+    expect(f.message).toMatch(/ru "one" also covers 21, 31/)
+  })
+
+  test('in an ICU-plural tree, `_one` keys are app-picked at count 1 (bulwark) and stay quiet', () => {
+    const src = { senders_one: '1 sender', senders_other: '{count} senders', inbox: '{n, plural, one {# mail} other {# mails}}' }
+    const uk = { senders_one: '1 відправник', senders_other: '{count} відправників', inbox: '{n, plural, one {# лист} few {# листи} many {# листів} other {# листа}}' }
+    const r = checkTranslations({ source: src, target: uk, targetLang: 'uk', format: 'brace' })
+    expect(r.findings.filter((f) => f.path === 'senders_one')).toEqual([])
+  })
+
   test('French and Spanish are not asked for "many" (millions only)', () => {
     expect(run({ items_one: '{{count}} article', items_other: '{{count}} articles', title: 'Panier' }, 'fr').findings).toEqual([])
     // …but i18next generates _many for them, and it is not an orphan

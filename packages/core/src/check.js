@@ -167,6 +167,30 @@ function neededCategories(lang, ordinal) {
   return requiredCategories(resolved, ordinal)
 }
 
+/**
+ * Whole numbers above 1 that a language's `one` category also covers — Ukrainian and
+ * Russian `one` is 1, 21, 31…, so a `one` hard-coding "1 хвилина" shows "1" for 21
+ * minutes (good_job #1848). Empty where `one` means exactly 1 (English, German…) and
+ * omitting the count is fine. Two examples are enough for the message.
+ */
+const oneCoversCache = new Map()
+function oneAlsoCovers(lang) {
+  const tag = String(lang).replace(/_/g, '-')
+  if (oneCoversCache.has(tag)) return oneCoversCache.get(tag)
+  const resolved = LANG_ALIASES[tag.toLowerCase()] || tag
+  const out = []
+  try {
+    if (Intl.PluralRules.supportedLocalesOf(resolved).length) {
+      const pr = new Intl.PluralRules(resolved)
+      for (let n = 2; n <= 101 && out.length < 2; n++) if (pr.select(n) === 'one') out.push(n)
+    }
+  } catch {
+    // unknown tag: treat `one` as exactly 1
+  }
+  oneCoversCache.set(tag, out)
+  return out
+}
+
 /** Heuristic for "probably untranslated": multi-word and contains letters. */
 const looksTranslatable = (str) => /\s/.test(str.trim()) && /[a-zA-Z]/.test(str)
 
@@ -242,7 +266,13 @@ export function checkTranslations({ source, target, targetLang = 'target', gloss
   const exemptMissing = new Set() // source categories this language doesn't have (ja `items_one`)
   const extraForms = new Map() // target-only categories it does have (pl `items_few`) → source `other` key
   const pluralFindings = []
-  for (const g of pluralGroups(srcKeys).values()) {
+  const srcPluralGroups = pluralGroups(srcKeys)
+  // A tree that writes plurals in ICU (`{count, plural, …}`) picks `_one` suffix keys in
+  // app code (`if (count === 1) t('count_one')`, bulwark), not by plural rule: only
+  // nested category keys (Rails, Android, xcstrings) are selected per CLDR there.
+  const icuPlurals = srcKeys.some((k) => typeof src[k] === 'string' && /\{\s*\w+\s*,\s*(?:plural|selectordinal)\s*,/.test(src[k]))
+  const ruleSelectsOne = (g) => Boolean(g) && g.cat === 'one' && srcPluralGroups.has(g.id) && (g.nested || !icuPlurals)
+  for (const g of srcPluralGroups.values()) {
     const needed = neededCategories(targetLang, g.ordinal)
     const all = allCategories(targetLang, g.ordinal)
     if (!needed || !all) continue
@@ -353,7 +383,14 @@ export function checkTranslations({ source, target, targetLang = 'target', gloss
         const emptyBrace = /\{\s*\}/.test(t)
         const singular = !emptyBrace && isCldrSingularKey(path) && missing.every(isCountPlaceholder)
         const suffix = !emptyBrace && missing.every(isSuffixPlaceholder)
-        const note = singular ? ' (singular form — may be intentional)' : suffix ? ' (English plural-suffix variable — usually intentional)' : ''
+        const covers = singular && ruleSelectsOne(pluralGroupOf(path)) ? oneAlsoCovers(targetLang) : []
+        const note = singular
+          ? covers.length
+            ? ` (${targetLang} "one" also covers ${covers.join(', ')}… — check the text is right for those numbers)`
+            : ' (singular form — may be intentional)'
+          : suffix
+            ? ' (English plural-suffix variable — usually intentional)'
+            : ''
         findings.push({
           type: 'placeholder-missing',
           severity: singular || suffix ? 'warning' : 'error',
@@ -363,14 +400,44 @@ export function checkTranslations({ source, target, targetLang = 'target', gloss
           source: s,
           translation: t,
         })
+      } else {
+        // English `one` is exactly 1, so "1 minute" with no count is right there and the
+        // comparison above passes. Where this language's `one` also covers 21, 31…, hold
+        // its `one` to the source `other` instead: "1 хвилина" for 21 minutes is wrong.
+        const g = pluralGroupOf(path)
+        const covers = ruleSelectsOne(g) ? oneAlsoCovers(targetLang) : []
+        const other = covers.length ? src[pluralKey(g, 'other')] : undefined
+        if (typeof other === 'string') {
+          const dropped = validatePlaceholders(other, t, { format }).missing.filter(isCountPlaceholder)
+          if (dropped.length && !/\{\s*\}/.test(t)) {
+            findings.push({
+              type: 'placeholder-missing',
+              severity: 'warning',
+              path,
+              missing: dropped,
+              message: `dropped ${dropped.join(', ')} (${targetLang} "one" also covers ${covers.join(', ')}… — check the text is right for those numbers)`,
+              source: other,
+              translation: t,
+            })
+          }
+        }
       }
-      if (added.length) {
+      // A plural form that spells the count where the source's `one` writes "1"
+      // ("%{count} хвилина" for "1 minute") is the fix above, not a stray variable,
+      // as long as the source's `other` uses that count.
+      const g = pluralGroupOf(path)
+      const srcOther = g && srcPluralGroups.has(g.id) ? src[pluralKey(g, 'other')] : undefined
+      const unexpected =
+        typeof srcOther === 'string'
+          ? added.filter((ph) => !(isCountPlaceholder(ph) && srcOther.includes(ph)))
+          : added
+      if (unexpected.length) {
         findings.push({
           type: 'placeholder-added',
           severity: 'warning',
           path,
-          added,
-          message: `unexpected ${added.join(', ')}`,
+          added: unexpected,
+          message: `unexpected ${unexpected.join(', ')}`,
           source: s,
           translation: t,
         })
