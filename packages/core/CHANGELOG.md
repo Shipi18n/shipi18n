@@ -1,5 +1,22 @@
 # @shipi18n/core
 
+## 2.15.1
+
+- **A `one` form is held to the source's `other` where the language's `one` covers more than 1.** Ukrainian and
+  Russian `one` is 1, 21, 31… (likewise Belarusian, Croatian, Bosnian, Serbian, Lithuanian, Latvian, Icelandic,
+  Breton, Filipino…). English `one` writes "1 minute" with no count, so a Ukrainian `one` of "1 хвилина" passed the
+  one-to-one comparison — and showed "1" for 21 minutes (found in good_job, fixed upstream in #1848). It is now a
+  `placeholder-missing` warning that names the numbers ("uk \"one\" also covers 21, 31…"). Where `one` means exactly
+  1 (English, German, French…) nothing changes. The existing "singular form — may be intentional" note also names
+  those numbers for these languages.
+- The fixed form (`one: "%{count} хвилина"` against an English "1 minute") is no longer reported as an unexpected
+  `%{count}`: a plural form may spell the count the source's `other` uses.
+- In trees that write plurals in ICU (`{count, plural, …}`), `_one` suffix keys are picked in app code at count 1, not
+  by plural rule, so the new check skips them; nested category keys (Rails, Android, .xcstrings) are always checked.
+- Measured before release: good_job before #1848 0 → 26 warnings (exactly the 26 strings fixed upstream); good_job
+  after #1848 26 false `placeholder-added` → 0; matcha +18 (real: ru/uk "1 минуту назад" for 21 minutes); diaspora
+  +20 warnings (br/fil/is…), −38 false `placeholder-added`; bulwark and npmx unchanged.
+
 ## 2.15.0
 
 - **Key-based plurals are checked against each language's CLDR categories.** i18next suffix keys (`items_one`,

@@ -1,5 +1,10 @@
 # @shipi18n/cli
 
+## 2.15.1
+
+- Bundles `@shipi18n/core@2.15.1`: a `one` form is checked against the source's `other` in languages whose `one`
+  also covers 21, 31… (uk, ru, …), and spelling the count in a plural form is no longer an unexpected variable.
+
 ## 2.15.0
 
 - Bundles `@shipi18n/core@2.15.0`: key-based plurals (i18next `_one`/`_few`, Rails, Android, .xcstrings) are
