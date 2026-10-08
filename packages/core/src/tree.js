@@ -18,6 +18,7 @@ import { parseAndroidStrings, androidLangFromValuesDir, androidEscapingFindings 
 import { parsePo } from './formats/po.js'
 import { parseXliff } from './formats/xliff.js'
 import { scanSecrets } from './secrets.js'
+import { findDuplicateKeys } from './duplicates.js'
 
 // Locale files are JSON or YAML. The check logic is format-agnostic once the
 // file is parsed to an object, so support is entirely a parse + discovery
@@ -245,6 +246,20 @@ function lockFindings(locks, lang, ns, sourceObj, targetObj) {
 }
 
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'))
+
+// JSON.parse keeps the last of two equal keys silently; a repeated key with a different
+// value is a translation nobody will see (matcha ar.json `inbox.archive`).
+function duplicateKeyFindings(file) {
+  return findDuplicateKeys(readFileSync(file, 'utf8')).map((d) => ({
+    type: 'duplicate-key',
+    severity: d.same ? 'warning' : 'error',
+    path: d.path,
+    line: d.line,
+    message: d.same
+      ? `key appears twice in one object (lines ${d.firstLine} and ${d.line}) with the same value`
+      : `key appears twice in one object (lines ${d.firstLine} and ${d.line}); parsers keep the last value, so line ${d.firstLine} is never used`,
+  }))
+}
 const countLeaves = (obj, depth = 0) => {
   if (depth > MAX_DEPTH) throw new Error(`locale nesting too deep (exceeds ${MAX_DEPTH} levels)`)
   return Object.values(obj).reduce((n, v) => n + (v && typeof v === 'object' ? countLeaves(v, depth + 1) : 1), 0)
@@ -292,6 +307,7 @@ export function jsonMode({ input, source, isIgnored, glossary, locks, format }) 
       }
       const { findings, stats } = checkTranslations({ source: sourceData[ns], target: data, targetLang: lang, glossary, format: detected })
       if (locks) findings.push(...lockFindings(locks, lang, ns, sourceData[ns], data))
+      if (/\.json$/i.test(file)) findings.push(...duplicateKeyFindings(file))
       const kept = findings.filter((f) => !isIgnored(ns, f.path))
       addPairs(perLang, lang, ns, sourceData[ns], data, isIgnored)
       namespaces.push({ ns, file: rel(file), findings: kept, stats: statsFrom(kept, stats.sourceKeys, stats.targetKeys) })

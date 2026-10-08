@@ -46,6 +46,8 @@ function hint(f, pair) {
       return 'use the same value type as the source (string vs object/array)'
     case 'invalid-json':
       return 'fix the file syntax so it parses'
+    case 'duplicate-key':
+      return 'keep one entry for this key (the last one is what users see) and delete the other'
     case 'missing-file':
       return 'create this locale file'
     case 'glossary-violation':

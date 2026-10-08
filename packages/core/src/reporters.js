@@ -75,6 +75,7 @@ export const RULE_META = {
   'untranslated': 'The translation is identical to a multi-word source string.',
   'type-mismatch': 'Source and translation values have different JSON types.',
   'invalid-json': 'A locale file could not be parsed as JSON.',
+  'duplicate-key': 'A JSON object repeats a key; parsers keep the last value and drop the other silently.',
   'missing-file': 'An expected locale file does not exist.',
   'stale-translation': 'The catalog marks this translation as needing review.',
   'glossary-violation': 'A do-not-translate or locked glossary term was not respected.',
