@@ -1,5 +1,10 @@
 # @shipi18n/cli
 
+## 2.16.0
+
+- Bundles `@shipi18n/core@2.16.0`: new `duplicate-key` rule, a key written twice in one JSON object (error when the
+  values differ, warning when identical). `--severity 'duplicate-key=warning'` keeps it from failing a build.
+
 ## 2.15.1
 
 - Bundles `@shipi18n/core@2.15.1`: a `one` form is checked against the source's `other` in languages whose `one`

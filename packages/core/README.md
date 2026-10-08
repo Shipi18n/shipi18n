@@ -97,7 +97,7 @@ const { findings, stats } = checkTranslations({
 Finding types: `missing-key`, `orphan-key`, `placeholder-missing`, `placeholder-added`,
 `plural-forms` (vue-i18n pipe plurals), `plural-category` (a plural missing a form the language needs, by CLDR —
 ICU plurals and key-based plurals: i18next `_one`/`_few`, Rails, Android, .xcstrings), `icu-invalid`, `empty-value`,
-`untranslated`, `type-mismatch`, `glossary-violation`. All 25 rules, each with
+`untranslated`, `type-mismatch`, `duplicate-key` (a key written twice in one JSON object), `glossary-violation`. All 26 rules, each with
 its own page: https://shipi18n.com/docs/cli/commands
 
 `reviewTranslations({ source, target, from, to, provider, passes, glossary, cache })` is the

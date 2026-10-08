@@ -1,5 +1,17 @@
 # @shipi18n/core
 
+## 2.16.0
+
+- **New rule `duplicate-key`: a key written twice in one JSON object.** `JSON.parse` (and Go's `encoding/json`,
+  Python's `json`) keep the last value and drop the first without a word, so the parsed file looks fine and every
+  key-set check passes while one string is never shown. The check scans the file text, names both lines, and is an
+  **error** when the two values differ (one is lost) and a **warning** when they are identical (redundant).
+  Fix hint: keep one entry. Found in matcha, where all eleven locale files repeated `inbox.archive` ("Archive" the
+  folder and "archive" the action, copied from `en.json`).
+- JSON target files only. YAML already rejects duplicate keys when parsing (a target reports `invalid-json` with the
+  line; a source stops the run). A duplicate only in the source JSON is not reported yet.
+- Measured: matcha 10 (8 errors, 2 warnings where ja/zh used the same word twice); bulwark, npmx 0.
+
 ## 2.15.1
 
 - **A `one` form is held to the source's `other` where the language's `one` covers more than 1.** Ukrainian and

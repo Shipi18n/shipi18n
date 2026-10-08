@@ -13,8 +13,8 @@ the exact fix.
 
 - **Detects:** dropped or renamed placeholders (`{name}`, `{{count}}`, `%{name}`, `%s`, `%1$s`, `%@`), plurals whose
   separator was lost or that miss a form the language needs (Polish few/many, Arabic two — in ICU, i18next keys,
-  Rails, Android and .xcstrings), invalid ICU MessageFormat, missing and orphaned keys,
-  empty and untranslated strings.
+  Rails, Android and .xcstrings), invalid ICU MessageFormat, missing and orphaned keys, a key written twice in one
+  JSON object, empty and untranslated strings.
 - **Formats:** JSON (i18next, vue-i18n, next-intl, flat or nested), YAML including Rails, Flutter ARB, Apple
   `.xcstrings`, Android `strings.xml`, gettext `.po`, XLIFF.
 - **Uploads anything?** No. The check runs offline, on your machine or CI runner.
