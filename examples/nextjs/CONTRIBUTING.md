@@ -67,7 +67,7 @@ git push origin feature/my-new-example
 
 ## Code Style Guidelines
 
-### Next.js 14 / React
+### Next.js 15 / React 19
 
 - Use App Router (not Pages Router)
 - Use Server Components by default
