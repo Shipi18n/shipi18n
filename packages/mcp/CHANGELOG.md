@@ -1,5 +1,11 @@
 # @shipi18n/mcp
 
+## 2.3.2
+
+- **Security:** requires `@modelcontextprotocol/sdk` ^1.31.0 (was ^1.30.0). 1.30.0 is affected by a high-severity
+  advisory fixed in 1.31.0, and its HTTP stack pulled in `proxy-addr` 2.0.7 (critical, fixed in 2.0.8). The lockfile
+  now resolves SDK 1.32.1 and proxy-addr 2.0.8. No tool or behavior change.
+
 ## 2.3.1
 
 - Tool and README text now name every format the validators read — JSON, YAML incl. Rails, Flutter ARB, Apple

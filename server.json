@@ -6,13 +6,13 @@
     "url": "https://github.com/Shipi18n/shipi18n",
     "source": "github"
   },
-  "version": "2.3.1",
+  "version": "2.3.2",
   "websiteUrl": "https://shipi18n.com",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@shipi18n/mcp",
-      "version": "2.3.1",
+      "version": "2.3.2",
       "transport": {
         "type": "stdio"
       },

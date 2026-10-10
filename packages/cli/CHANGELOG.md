@@ -1,5 +1,9 @@
 # @shipi18n/cli
 
+## 2.16.1
+
+- No changes; released alongside `@shipi18n/mcp@2.3.2` (MCP SDK security update).
+
 ## 2.16.0
 
 - Bundles `@shipi18n/core@2.16.0`: new `duplicate-key` rule, a key written twice in one JSON object (error when the
