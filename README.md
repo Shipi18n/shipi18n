@@ -5,6 +5,7 @@
 [![MCP](https://img.shields.io/npm/v/@shipi18n/mcp?label=%40shipi18n%2Fmcp)](https://www.npmjs.com/package/@shipi18n/mcp)
 [![downloads](https://img.shields.io/npm/dm/@shipi18n/cli?label=downloads)](https://www.npmjs.com/package/@shipi18n/cli)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Shipi18n/shipi18n/badge)](https://scorecard.dev/viewer/?uri=github.com/Shipi18n/shipi18n)
 [![Smithery](https://img.shields.io/badge/Smithery-96%2F100-6b46c1)](https://smithery.ai/servers/ogreenowow/shipi18n)
 
 **Catch broken translations before you ship them.** Shipi18n is an open-source check for locale files: it fails CI

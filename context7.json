@@ -1,0 +1,30 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "projectTitle": "Shipi18n",
+  "description": "Shipi18n is an open-source check for locale files. It fails CI when a translation drops or breaks a placeholder, plural or key, and shows the exact fix. It reads JSON, YAML, ARB, xcstrings, gettext, XLIFF and Android XML. No account and no API key. Optionally retranslate failures with your own LLM key.",
+  "folders": [
+    "docs",
+    "packages",
+    "examples"
+  ],
+  "excludeFolders": [
+    "node_modules",
+    "dist",
+    ".changeset",
+    "**/__tests__",
+    "**/test",
+    "**/fixtures"
+  ],
+  "excludeFiles": [
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "CODE_OF_CONDUCT.md",
+    "SECURITY.md"
+  ],
+  "rules": [
+    "Run checks with `npx @shipi18n/cli check <locales-dir> -s <source-locale>`; checks need no API key.",
+    "Only `--semantic` and the translate commands need an OpenAI or Anthropic key, read from the environment.",
+    "In GitHub Actions, use `Shipi18n/shipi18n-github-action@v3`.",
+    "Use `--reporter sarif` or `--reporter junit` for CI annotations. Exit code 0 = pass, 1 = findings at the fail level, 2 = usage error."
+  ]
+}
