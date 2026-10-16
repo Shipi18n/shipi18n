@@ -335,6 +335,11 @@ export function checkTranslations({ source, target, targetLang = 'target', gloss
     }
     if (typeof s !== 'string') continue // numbers/booleans/null pass through untranslated by design
 
+    // A separator (no letters or digits, e.g. Rails `number.format.delimiter: ","`)
+    // translated to a space, NBSP or U+202F is the locale's real thousands separator,
+    // not an empty translation: good_job es/fr/ru (FP#19). `""` is still empty.
+    if (t !== '' && t.trim() === '' && !/[\p{L}\p{N}]/u.test(s)) continue
+
     if (t.trim() === '' && s.trim() !== '') {
       // A sentence split across numbered fragments (part_1/part_2/part_3, or _1/_2)
       // is legitimately empty in one slot for languages that reorder the clause:
