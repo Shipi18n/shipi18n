@@ -20,21 +20,23 @@ on:
         required: true
 
 permissions:
-  contents: write      # create the release / upload assets
-  id-token: write      # build-provenance attestation
-  attestations: write
+  contents: read
 
 jobs:
   single-file:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write      # create the release / upload assets
+      id-token: write      # build-provenance attestation
+      attestations: write
     env:
       TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           ref: ${{ env.TAG }}
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: pnpm
@@ -60,7 +62,7 @@ jobs:
         working-directory: out
         run: sha256sum shipi18n.mjs > shipi18n.mjs.sha256 && cat shipi18n.mjs.sha256
 
-      - uses: actions/attest-build-provenance@v2
+      - uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
         with:
           subject-path: out/shipi18n.mjs
 
