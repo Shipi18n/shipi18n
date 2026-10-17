@@ -1,5 +1,11 @@
 # @shipi18n/core
 
+## 2.16.2
+
+### Patch Changes
+
+- afb2042: `empty-value` no longer fires when a separator (a source with no letters or digits, such as Rails `number.format.delimiter: ","`) is translated to a space, U+00A0 or U+202F: that is the locale's real thousands separator. A space for a real word, and `""` for anything, are still errors. Found on good_job es/fr/ru (6 false errors → 0).
+
 ## 2.16.1
 
 - No changes; released alongside `@shipi18n/mcp@2.3.2` (MCP SDK security update).
@@ -38,6 +44,7 @@
 - **Key-based plurals are checked against each language's CLDR categories.** i18next suffix keys (`items_one`,
   `items_few`, `items_ordinal_two`…), Rails YAML `one:`/`other:`, Android `<plurals>` and `.xcstrings` plural
   variations used to be compared key by key with the source, which was wrong three ways:
+
   - a correct Polish file's `items_few`/`items_many` were reported as orphans, with the hint "delete this key";
   - a correct Japanese file (only `items_other`, its one category) **failed** on a missing `items_one`;
   - Polish with only `items_one`/`items_other` passed.
@@ -47,6 +54,7 @@
   names the keys to add. Categories are counted over whole numbers, as for ICU plurals, so French and Spanish are not
   asked for `many`. A lone `*_other` key (e.g. `gender_other`) and objects mixing category names with other keys are
   not treated as plurals. Unknown language labels keep the old key-by-key comparison.
+
 - A form a language has but the source lacks is checked against the source's `other`. If it drops only the count
   (Arabic `two` is "دقيقتان", "two minutes", with no digit) that is a warning; any other placeholder is an error.
 - Hebrew `two` (the dual) is no longer required, for ICU plurals either: "2 שעות" is standard Hebrew. Arabic `two`

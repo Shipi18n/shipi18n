@@ -1,5 +1,13 @@
 # @shipi18n/cli
 
+## 2.16.2
+
+### Patch Changes
+
+- afb2042: `empty-value` no longer fires when a separator (a source with no letters or digits, such as Rails `number.format.delimiter: ","`) is translated to a space, U+00A0 or U+202F: that is the locale's real thousands separator. A space for a real word, and `""` for anything, are still errors. Found on good_job es/fr/ru (6 false errors → 0).
+- Updated dependencies [afb2042]
+  - @shipi18n/core@2.16.2
+
 ## 2.16.1
 
 - No changes; released alongside `@shipi18n/mcp@2.3.2` (MCP SDK security update).
@@ -37,7 +45,7 @@
 ## 2.13.1
 
 - **Single-file build:** every GitHub release now carries `shipi18n.mjs`, the whole CLI in one file: no `npm
-  install`, no `node_modules`, nothing from the npm registry at install time. Published with a SHA-256 checksum
+install`, no `node_modules`, nothing from the npm registry at install time. Published with a SHA-256 checksum
   and a GitHub build-provenance attestation, and verified against the agent-contract suite before upload.
   Covers `check`, `lock` and `wp-sync`; `--semantic`/`translate` still need the npm package.
 
@@ -92,7 +100,7 @@
 - Pulls core 2.11.3: format-aware placeholder grammars, Rails YAML root-key unwrap, eleven false-positive
   classes fixed, warning tier for plural simplifications.
 - New `--format <name>` flag to override the auto-detected placeholder grammar (`icu | i18next | vue | brace |
-  rails | gettext | android | apple | generic`).
+rails | gettext | android | apple | generic`).
 
 ## 2.9.0
 
