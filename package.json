@@ -13,10 +13,10 @@
     "release": "changeset publish"
   },
   "devDependencies": {
-    "@anthropic-ai/sdk": "^0.30.0",
+    "@anthropic-ai/sdk": "^0.133.0",
     "@changesets/cli": "^2.27.0",
     "openai": "^4.0.0",
-    "turbo": "^2.0.0"
+    "turbo": "^2.11.8"
   },
   "packageManager": "pnpm@9.15.9",
   "pnpm": {
