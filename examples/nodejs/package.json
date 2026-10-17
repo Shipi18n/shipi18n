@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@shipi18n/core": "^2.0.0",
-    "@anthropic-ai/sdk": "^0.114.0"
+    "@anthropic-ai/sdk": "^0.133.0"
   },
   "devDependencies": {
     "dotenv": "^16.3.1",
