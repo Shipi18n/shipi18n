@@ -45,7 +45,7 @@
     "directory": "packages/mcp"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.32.1",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@shipi18n/core": "workspace:^",
     "zod": "^3.23.0"
   },
